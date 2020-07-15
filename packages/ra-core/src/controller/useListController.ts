@@ -8,24 +8,32 @@ import get from 'lodash/get';
 import { useCheckMinimumRequiredProps } from './checkMinimumRequiredProps';
 import useListParams from './useListParams';
 import useRecordSelection from './useRecordSelection';
-import useVersion from './useVersion';
 import { useTranslate } from '../i18n';
 import { SORT_ASC } from '../reducer/admin/resource/list/queryReducer';
-import { CRUD_GET_LIST, ListParams } from '../actions';
+import { CRUD_GET_LIST } from '../actions';
 import { useNotify } from '../sideEffect';
-import { Sort, RecordMap, Identifier, ReduxState, Record } from '../types';
+import defaultExporter from '../export/defaultExporter';
+import {
+    Filter,
+    Sort,
+    RecordMap,
+    Identifier,
+    ReduxState,
+    Record,
+    Exporter,
+} from '../types';
 import useGetList from '../dataProvider/useGetList';
 
 export interface ListProps {
     // the props you can change
-    filter?: object;
+    filter?: Filter;
     filters?: ReactElement<any>;
     filterDefaultValues?: object;
-    pagination?: ReactElement<any>;
     perPage?: number;
     sort?: Sort;
+    exporter?: Exporter | false;
     // the props managed by react-admin
-    basePath: string;
+    basePath?: string;
     debounce?: number;
     hasCreate?: boolean;
     hasEdit?: boolean;
@@ -33,8 +41,7 @@ export interface ListProps {
     hasShow?: boolean;
     location?: Location;
     path?: string;
-    query: ListParams;
-    resource: string;
+    resource?: string;
     [key: string]: any;
 }
 
@@ -49,8 +56,10 @@ export interface ListControllerProps<RecordType = Record> {
     basePath: string;
     currentSort: Sort;
     data: RecordMap<RecordType>;
-    defaultTitle: string;
+    defaultTitle?: string;
     displayedFilters: any;
+    error?: any;
+    exporter?: Exporter | false;
     filterValues: any;
     hasCreate: boolean;
     hideFilter: (filterName: string) => void;
@@ -67,10 +76,9 @@ export interface ListControllerProps<RecordType = Record> {
     setFilters: (filters: any, displayedFilters: any) => void;
     setPage: (page: number) => void;
     setPerPage: (page: number) => void;
-    setSort: (sort: string) => void;
+    setSort: (sort: string, order?: string) => void;
     showFilter: (filterName: string, defaultValue: any) => void;
     total: number;
-    version: number;
 }
 
 /**
@@ -97,6 +105,7 @@ const useListController = <RecordType = Record>(
 
     const {
         basePath,
+        exporter = defaultExporter,
         resource,
         hasCreate,
         filterDefaultValues,
@@ -115,7 +124,6 @@ const useListController = <RecordType = Record>(
     const location = useLocation();
     const translate = useTranslate();
     const notify = useNotify();
-    const version = useVersion();
 
     const [query, queryModifiers] = useListParams({
         resource,
@@ -132,7 +140,7 @@ const useListController = <RecordType = Record>(
      * We want the list of ids to be always available for optimistic rendering,
      * and therefore we need a custom action (CRUD_GET_LIST) that will be used.
      */
-    const { ids, total, loading, loaded } = useGetList<RecordType>(
+    const { ids, total, error, loading, loaded } = useGetList<RecordType>(
         resource,
         {
             page: query.page,
@@ -174,15 +182,17 @@ const useListController = <RecordType = Record>(
             get(state.admin.resources, [resource, 'list', 'total'], 0)
     );
 
+    const finalIds = typeof total === 'undefined' ? defaultIds : ids;
+
     useEffect(() => {
         if (
             query.page <= 0 ||
-            (!loading && query.page > 1 && (ids || []).length === 0)
+            (!loading && query.page > 1 && (finalIds || []).length === 0)
         ) {
             // query for a page that doesn't exist, set page to 1
             queryModifiers.setPage(1);
         }
-    }, [loading, query.page, ids, queryModifiers]);
+    }, [loading, query.page, finalIds, queryModifiers, total, defaultIds]);
 
     const currentSort = useMemo(
         () => ({
@@ -206,10 +216,12 @@ const useListController = <RecordType = Record>(
         data,
         defaultTitle,
         displayedFilters: query.displayedFilters,
+        error,
+        exporter,
         filterValues: query.filterValues,
         hasCreate,
         hideFilter: queryModifiers.hideFilter,
-        ids: typeof total === 'undefined' ? defaultIds : ids,
+        ids: finalIds,
         loaded: loaded || defaultIds.length > 0,
         loading,
         onSelect: selectionModifiers.select,
@@ -225,7 +237,6 @@ const useListController = <RecordType = Record>(
         setSort: queryModifiers.setSort,
         showFilter: queryModifiers.showFilter,
         total: typeof total === 'undefined' ? defaultTotal : total,
-        version,
     };
 };
 
@@ -235,6 +246,8 @@ export const injectedProps = [
     'data',
     'defaultTitle',
     'displayedFilters',
+    'error',
+    'exporter',
     'filterValues',
     'hasCreate',
     'hideFilter',

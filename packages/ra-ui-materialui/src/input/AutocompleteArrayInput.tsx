@@ -9,7 +9,8 @@ import React, {
 import Downshift, { DownshiftProps } from 'downshift';
 import classNames from 'classnames';
 import get from 'lodash/get';
-import { makeStyles, TextField, Chip } from '@material-ui/core';
+import { TextField, Chip } from '@material-ui/core';
+import { makeStyles } from '@material-ui/core/styles';
 import { TextFieldProps } from '@material-ui/core/TextField';
 import {
     useInput,
@@ -108,7 +109,7 @@ const AutocompleteArrayInput: FunctionComponent<
         isRequired: isRequiredOverride,
         label,
         limitChoicesToValue,
-        margin,
+        margin = 'dense',
         matchSuggestion,
         meta: metaOverride,
         onBlur,
@@ -177,8 +178,8 @@ const AutocompleteArrayInput: FunctionComponent<
     );
 
     const selectedItems = useMemo(() => values.map(getSuggestionFromValue), [
-        ...values,
         getSuggestionFromValue,
+        values,
     ]);
 
     const { getChoiceText, getChoiceValue, getSuggestions } = useSuggestions({

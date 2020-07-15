@@ -9,7 +9,7 @@ import { Sort } from '../types';
 export interface SortProps {
     setSortField: (field: string) => void;
     setSortOrder: (order: string) => void;
-    setSort: (sort: Sort) => void;
+    setSort: (sort: Sort, order?: string) => void;
     sort: Sort;
 }
 
@@ -102,8 +102,7 @@ export const defaultSort = { field: 'id', order: 'DESC' };
  * @param {string} initialSort.order The initial sort order
  * @returns {SortProps} The sort props
  */
-
-export default (initialSort: Sort = defaultSort): SortProps => {
+const useSortState = (initialSort: Sort = defaultSort): SortProps => {
     const [sort, dispatch] = useReducer(sortReducer, initialSort);
     const isFirstRender = useRef(true);
     useEffect(() => {
@@ -132,3 +131,5 @@ export default (initialSort: Sort = defaultSort): SortProps => {
         sort,
     };
 };
+
+export default useSortState;
