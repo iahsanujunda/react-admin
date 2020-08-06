@@ -56,13 +56,13 @@ Additional props are passed down to the underlying component (usually a material
 
 **Tip**: If you edit a record with a complex structure, you can use a path as the `source` parameter. For instance, if the API returns the following 'book' record:
 
-```jsx
+```json
 {
-    id: 1234,
-    title: 'War and Peace',
-    author: {
-        firstName: 'Leo',
-        lastName: 'Tolstoi'
+    "id": 1234,
+    "title": "War and Peace",
+    "author": {
+        "firstName": "Leo",
+        "lastName": "Tolstoi"
     }
 }
 ```
@@ -96,17 +96,17 @@ import { ArrayInput, SimpleFormIterator, DateInput, TextInput } from 'react-admi
 
  `<ArrayInput>` allows editing of embedded arrays, like the `backlinks` field in the following `post` record:
 
-```js
+```json
 {
-  id: 123,
-  backlinks: [
+  "id": 123,
+  "backlinks": [
         {
-            date: '2012-08-10T00:00:00.000Z',
-            url: 'http://example.com/foo/bar.html',
+            "date": "2012-08-10T00:00:00.000Z",
+            "url": "http://example.com/foo/bar.html",
         },
         {
-            date: '2012-08-14T00:00:00.000Z',
-            url: 'https://blog.johndoe.com/2012/08/12/foobar.html',
+            "date": "2012-08-14T00:00:00.000Z",
+            "url": "https://blog.johndoe.com/2012/08/12/foobar.html",
         }
    ]
 }
@@ -216,7 +216,7 @@ const choices = [
 ];
 const OptionRenderer = choice => (
     <span>
-        <img src={choice.avatar}>
+        <img src={choice.avatar} />
         `${choice.first_name} ${choice.last_name}`
     </span>
 );
@@ -605,9 +605,9 @@ import { DateTimeInput } from 'react-admin';
 
 ### Usage
 
-Files are accepted or rejected based on the `accept`, `multiple`, `minSize` and `maxSize` props. `accept` must be a valid [MIME type](http://www.iana.org/assignments/media-types/media-types.xhtml) according to [input element specification](https://www.w3.org/wiki/HTML/Elements/input/file) or a valid file extension. If `multiple` is set to false and additional files are droppped, all files besides the first will be rejected. Any file which does not have a size in the [`minSize`, `maxSize`] range, will be rejected as well.
+Files are accepted or rejected based on the `accept`, `multiple`, `minSize` and `maxSize` props. `accept` must be a valid [MIME type](http://www.iana.org/assignments/media-types/media-types.xhtml) according to [input element specification](https://www.w3.org/wiki/HTML/Elements/input/file) or a valid file extension. If `multiple` is set to false and additional files are dropped, all files besides the first will be rejected. Any file which does not have a size in the [`minSize`, `maxSize`] range, will be rejected as well.
 
-`<ImageInput>` delegates the preview of currently selected images to its child. `<ImageInput>` clones its child as many times as there are selected images, passing the image as the `record` prop. To preview a simple list of image thubnails, you can use `<ImageField>` as child, as follows:
+`<ImageInput>` delegates the preview of currently selected images to its child. `<ImageInput>` clones its child as many times as there are selected images, passing the image as the `record` prop. To preview a simple list of image thumbnails, you can use `<ImageField>` as child, as follows:
 
 ```jsx
 <ImageInput source="pictures" label="Related pictures" accept="image/*">
@@ -655,7 +655,7 @@ Note that the image upload returns a [File](https://developer.mozilla.org/en/doc
 
 ### Usage
 
-Files are accepted or rejected based on the `accept`, `multiple`, `minSize` and `maxSize` props. `accept` must be a valid [MIME type](http://www.iana.org/assignments/media-types/media-types.xhtml) according to [input element specification](https://www.w3.org/wiki/HTML/Elements/input/file) or a valid file extension. If `multiple` is set to false and additional files are droppped, all files besides the first will be rejected. Any file which does not have a size in the [`minSize`, `maxSize`] range, will be rejected as well.
+Files are accepted or rejected based on the `accept`, `multiple`, `minSize` and `maxSize` props. `accept` must be a valid [MIME type](http://www.iana.org/assignments/media-types/media-types.xhtml) according to [input element specification](https://www.w3.org/wiki/HTML/Elements/input/file) or a valid file extension. If `multiple` is set to false and additional files are dropped, all files besides the first will be rejected. Any file which does not have a size in the [`minSize`, `maxSize`] range, will be rejected as well.
 
 `FileInput` delegates the preview of currently selected files to its child. `FileInput` clones its child as many times as there are selected files, passing the file as the `record` prop. To preview a simple list of files names, you can use `<FileField>` as child, as follows:
 
@@ -845,10 +845,10 @@ Use `<ReferenceArrayInput>` to edit an array of reference values, i.e. to let us
 
 For instance, if the post object has many tags, a post resource may look like:
 
-```js
+```json
 {
-    id: 1234,
-    tag_ids: [1, 23, 4]
+    "id": 1234,
+    "tag_ids": [1, 23, 4]
 }
 ```
 
@@ -1261,7 +1261,7 @@ import { SelectArrayInput } from 'react-admin';
 You can also customize the properties to use for the option name and value,
 thanks to the `optionText` and `optionValue` attributes.
 
-```js
+```jsx
 const choices = [
    { _id: '1', name: 'Book', plural_name: 'Books' },
    { _id: '2', name: 'Video', plural_name: 'Videos' },
@@ -1272,7 +1272,7 @@ const choices = [
 
 `optionText` also accepts a function, so you can shape the option text at will:
 
-```js
+```jsx
 const choices = [
    { id: '1', name: 'Book', quantity: 23 },
    { id: '2', name: 'Video', quantity: 56 },
@@ -1640,7 +1640,7 @@ const PersonEdit = props => (
             />
         </SimpleForm>
     </Edit>
-)
+);
 ```
 
 ## Linking Two Inputs
@@ -1734,7 +1734,7 @@ const PostEdit = (props) => (
                             formData, // The whole form data
                             scopedFormData, // The data for this item of the ArrayInput
                             getSource, // A function to get the valid source inside an ArrayInput
-                            ...rest,
+                            ...rest
                         }) =>
                             scopedFormData && scopedFormData.name ? (
                                 <SelectInput

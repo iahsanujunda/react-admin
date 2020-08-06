@@ -316,10 +316,10 @@ For more details on custom layouts, check [the Theming documentation](./Theming.
 
 The `<Admin>` app uses [Redux](http://redux.js.org/) to manage state. The state has the following keys:
 
-```jsx
+```json
 {
-    admin: { /*...*/ }, // used by react-admin
-    routing: { /*...*/ }, // used by connected-react-router
+    "admin": { /*...*/ }, // used by react-admin
+    "routing": { /*...*/ }, // used by connected-react-router
 }
 ```
 
@@ -357,11 +357,11 @@ export default App;
 
 Now the state will look like:
 
-```jsx
+```json
 {
-    admin: { /*...*/ }, // used by react-admin
-    routing: { /*...*/ }, // used by connected-react-router
-    bitcoinRate: 123, // managed by rateReducer
+    "admin": { /*...*/ }, // used by react-admin
+    "routing": { /*...*/ }, // used by connected-react-router
+    "bitcoinRate": 123, // managed by rateReducer
 }
 ```
 
@@ -557,7 +557,7 @@ const App = () => (
 
 ## Declaring resources at runtime
 
-You might want to dynamically define the resources when the app starts. To do so, you have two options: using a function as `<Admin>` child, or unplugging it to use a combinaison of `AdminContext` and `<AdminUI>` instead.
+You might want to dynamically define the resources when the app starts. To do so, you have two options: using a function as `<Admin>` child, or unplugging it to use a combination of `AdminContext` and `<AdminUI>` instead.
 
 ### Using a Function As `<Admin>` Child
 
@@ -596,7 +596,7 @@ const App = () => (
 );
 ```
 
-### Unplugging the <Admin> using `<AdminContext>` and `<AdminUI>`
+### Unplugging the `<Admin>` using `<AdminContext>` and `<AdminUI>`
 
 Setting Resources dynamically using the children-as-function syntax may not be enough in all cases, because this function can't execute hooks.
 

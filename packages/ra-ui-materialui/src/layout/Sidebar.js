@@ -14,7 +14,7 @@ const useStyles = makeStyles(
     theme => ({
         drawerPaper: {
             position: 'relative',
-            height: 'auto',
+            height: '100%',
             overflowX: 'hidden',
             width: props =>
                 props.open
@@ -29,7 +29,6 @@ const useStyles = makeStyles(
                 duration: theme.transitions.duration.leavingScreen,
             }),
             backgroundColor: 'transparent',
-            marginTop: '0.5em',
             borderRight: 'none',
             [theme.breakpoints.only('xs')]: {
                 marginTop: 0,
@@ -39,7 +38,6 @@ const useStyles = makeStyles(
             },
             [theme.breakpoints.up('md')]: {
                 border: 'none',
-                marginTop: '1.5em',
             },
             zIndex: 'inherit',
         },
