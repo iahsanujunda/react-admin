@@ -1,19 +1,22 @@
 import * as React from 'react';
 import { Children, cloneElement, FC, memo, ReactElement } from 'react';
 import PropTypes from 'prop-types';
-import { LinearProgress } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import {
-    ListContext,
+    ListContextProvider,
+    useListContext,
     ListControllerProps,
     useReferenceArrayFieldController,
-    Sort,
-    Filter,
+    SortPayload,
+    FilterPayload,
+    ResourceContextProvider,
+    useRecordContext,
 } from 'ra-core';
 
-import { fieldPropTypes, FieldProps, InjectedFieldProps } from './types';
-import sanitizeRestProps from './sanitizeRestProps';
-import { ClassNameMap } from '@material-ui/styles';
+import { fieldPropTypes, PublicFieldProps, InjectedFieldProps } from './types';
+import { ClassesOverride } from '../types';
+import sanitizeFieldRestProps from './sanitizeFieldRestProps';
+import { LinearProgress } from '../layout';
 
 /**
  * A container component that fetches records from another resource specified
@@ -55,7 +58,7 @@ import { ClassNameMap } from '@material-ui/styles';
  * </ReferenceArrayField>
  *
  * By default, the field displays the results in the order in which they are referenced
- * (i.e in the order of the list of ids). You can change this order
+ * (i.e. in the order of the list of ids). You can change this order
  * by setting the `sort` prop (an object with `field` and `order` properties).
  *
  * @example
@@ -78,12 +81,12 @@ const ReferenceArrayField: FC<ReferenceArrayFieldProps> = props => {
         filter,
         page = 1,
         perPage,
-        record,
         reference,
         resource,
         sort,
         source,
     } = props;
+    const record = useRecordContext(props);
 
     if (React.Children.count(children) !== 1) {
         throw new Error(
@@ -102,9 +105,11 @@ const ReferenceArrayField: FC<ReferenceArrayFieldProps> = props => {
         source,
     });
     return (
-        <ListContext.Provider value={controllerProps}>
-            <PureReferenceArrayFieldView {...props} {...controllerProps} />
-        </ListContext.Provider>
+        <ResourceContextProvider value={reference}>
+            <ListContextProvider value={controllerProps}>
+                <PureReferenceArrayFieldView {...props} {...controllerProps} />
+            </ListContextProvider>
+        </ResourceContextProvider>
     );
 };
 
@@ -128,16 +133,18 @@ ReferenceArrayField.defaultProps = {
     addLabel: true,
 };
 
-interface ReferenceArrayFieldProps extends FieldProps, InjectedFieldProps {
+export interface ReferenceArrayFieldProps
+    extends PublicFieldProps,
+        InjectedFieldProps {
     children: ReactElement;
-    classes?: Partial<ClassNameMap<ReferenceArrayFieldClassKey>>;
-    filter?: Filter;
+    classes?: ClassesOverride<typeof useStyles>;
+    filter?: FilterPayload;
     page?: number;
     pagination?: ReactElement;
     perPage?: number;
     reference: string;
     resource?: string;
-    sort?: Sort;
+    sort?: SortPayload;
 }
 
 const useStyles = makeStyles(
@@ -147,35 +154,41 @@ const useStyles = makeStyles(
     { name: 'RaReferenceArrayField' }
 );
 
-type ReferenceArrayFieldClassKey = 'progress';
-
-interface ReferenceArrayFieldViewProps
+export interface ReferenceArrayFieldViewProps
     extends Omit<
             ReferenceArrayFieldProps,
             'basePath' | 'resource' | 'page' | 'perPage'
         >,
-        ListControllerProps {}
+        ListControllerProps {
+    classes?: ClassesOverride<typeof useStyles>;
+}
 
-export const ReferenceArrayFieldView: FC<
-    ReferenceArrayFieldViewProps
-> = props => {
-    const { children, pagination, className, reference, ...rest } = props;
+export const ReferenceArrayFieldView: FC<ReferenceArrayFieldViewProps> = props => {
+    const {
+        children,
+        pagination,
+        className,
+        resource,
+        reference,
+        ...rest
+    } = props;
     const classes = useStyles(props);
+    const { loaded } = useListContext(props);
 
-    if (!props.loaded) {
+    if (!loaded) {
         return <LinearProgress className={classes.progress} />;
     }
 
     return (
         <>
             {cloneElement(Children.only(children), {
-                ...sanitizeRestProps(rest),
+                ...sanitizeFieldRestProps(rest),
                 className,
-                resource: reference,
+                resource,
             })}{' '}
             {pagination &&
                 props.total !== undefined &&
-                cloneElement(pagination, sanitizeRestProps(rest))}
+                cloneElement(pagination, sanitizeFieldRestProps(rest))}
         </>
     );
 };

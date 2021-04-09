@@ -3,9 +3,10 @@ import { FC, memo } from 'react';
 import PropTypes from 'prop-types';
 import get from 'lodash/get';
 import Typography, { TypographyProps } from '@material-ui/core/Typography';
+import { useRecordContext } from 'ra-core';
 
-import sanitizeRestProps from './sanitizeRestProps';
-import { FieldProps, InjectedFieldProps, fieldPropTypes } from './types';
+import sanitizeFieldRestProps from './sanitizeFieldRestProps';
+import { PublicFieldProps, InjectedFieldProps, fieldPropTypes } from './types';
 
 const hasNumberFormat = !!(
     typeof Intl === 'object' &&
@@ -42,16 +43,17 @@ const hasNumberFormat = !!(
  * <span>25,99 $US</span>
  */
 export const NumberField: FC<NumberFieldProps> = memo<NumberFieldProps>(
-    ({
-        className,
-        emptyText,
-        record,
-        source,
-        locales,
-        options,
-        textAlign,
-        ...rest
-    }) => {
+    props => {
+        const {
+            className,
+            emptyText,
+            source,
+            locales,
+            options,
+            textAlign,
+            ...rest
+        } = props;
+        const record = useRecordContext(props);
         if (!record) {
             return null;
         }
@@ -62,7 +64,7 @@ export const NumberField: FC<NumberFieldProps> = memo<NumberFieldProps>(
                     component="span"
                     variant="body2"
                     className={className}
-                    {...sanitizeRestProps(rest)}
+                    {...sanitizeFieldRestProps(rest)}
                 >
                     {emptyText}
                 </Typography>
@@ -74,7 +76,7 @@ export const NumberField: FC<NumberFieldProps> = memo<NumberFieldProps>(
                 variant="body2"
                 component="span"
                 className={className}
-                {...sanitizeRestProps(rest)}
+                {...sanitizeFieldRestProps(rest)}
             >
                 {hasNumberFormat
                     ? value.toLocaleString(locales, options)
@@ -84,7 +86,7 @@ export const NumberField: FC<NumberFieldProps> = memo<NumberFieldProps>(
     }
 );
 
-// what? TypeScript looses the displayName if we don't set it explicitly
+// what? TypeScript loses the displayName if we don't set it explicitly
 NumberField.displayName = 'NumberField';
 
 NumberField.defaultProps = {
@@ -104,7 +106,7 @@ NumberField.propTypes = {
 };
 
 export interface NumberFieldProps
-    extends FieldProps,
+    extends PublicFieldProps,
         InjectedFieldProps,
         TypographyProps {
     locales?: string | string[];

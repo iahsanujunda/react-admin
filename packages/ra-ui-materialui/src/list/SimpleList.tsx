@@ -18,6 +18,7 @@ import {
     sanitizeListRestProps,
     useListContext,
     Record,
+    RecordMap,
     Identifier,
 } from 'ra-core';
 
@@ -46,9 +47,12 @@ const useStyles = makeStyles(
  * - rightAvatar: same
  * - rightIcon: same
  * - linkType: 'edit' or 'show', or a function returning 'edit' or 'show' based on the record
+ * - rowStyle: function returning a style object based on (record, index)
  *
  * @example // Display all posts as a List
- *
+ * const postRowStyle = (record, index) => ({
+ *     backgroundColor: record.views >= 500 ? '#efe' : 'white',
+ * });
  * export const PostList = (props) => (
  *     <List {...props}>
  *         <SimpleList
@@ -57,6 +61,7 @@ const useStyles = makeStyles(
  *             tertiaryText={record =>
  *                 new Date(record.published_at).toLocaleDateString()
  *             }
+ *             rowStyle={postRowStyle}
  *          />
  *     </List>
  * );
@@ -74,6 +79,7 @@ const SimpleList: FC<SimpleListProps> = props => {
         rightIcon,
         secondaryText,
         tertiaryText,
+        rowStyle,
         ...rest
     } = props;
     const { basePath, data, ids, loaded, total } = useListContext(props);
@@ -95,7 +101,7 @@ const SimpleList: FC<SimpleListProps> = props => {
     return (
         total > 0 && (
             <List className={className} {...sanitizeListRestProps(rest)}>
-                {ids.map(id => (
+                {ids.map((id, rowIndex) => (
                     <LinkOrNot
                         linkType={linkType}
                         basePath={basePath}
@@ -103,7 +109,14 @@ const SimpleList: FC<SimpleListProps> = props => {
                         key={id}
                         record={data[id]}
                     >
-                        <ListItem button={!!linkType as any}>
+                        <ListItem
+                            button={!!linkType as any}
+                            style={
+                                rowStyle
+                                    ? rowStyle(data[id], rowIndex)
+                                    : undefined
+                            }
+                        >
                             {leftIcon && (
                                 <ListItemIcon>
                                     {leftIcon(data[id], id)}
@@ -166,14 +179,16 @@ SimpleList.propTypes = {
     rightIcon: PropTypes.func,
     secondaryText: PropTypes.func,
     tertiaryText: PropTypes.func,
+    rowStyle: PropTypes.func,
 };
 
 export type FunctionToElement = (
     record: Record,
     id: Identifier
-) => ReactElement;
+) => ReactElement | string;
 
-export interface SimpleListProps extends Omit<ListProps, 'classes'> {
+export interface SimpleListProps<RecordType extends Record = Record>
+    extends Omit<ListProps, 'classes'> {
     className?: string;
     classes?: ClassesOverride<typeof useStyles>;
     hasBulkActions?: boolean;
@@ -185,6 +200,13 @@ export interface SimpleListProps extends Omit<ListProps, 'classes'> {
     rightIcon?: FunctionToElement;
     secondaryText?: FunctionToElement;
     tertiaryText?: FunctionToElement;
+    rowStyle?: (record: Record, index: number) => any;
+    // can be injected when using the component without context
+    basePath?: string;
+    data?: RecordMap<RecordType>;
+    ids?: Identifier[];
+    loaded?: boolean;
+    total?: number;
 }
 
 const useLinkOrNotStyles = makeStyles(

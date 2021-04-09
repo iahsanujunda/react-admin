@@ -74,16 +74,20 @@ const RichTextInput: FunctionComponent<Props> = props => {
 
     const lastValueChange = useRef(value);
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const onTextChange = useCallback(
         debounce(() => {
             const value =
                 editor.current.innerHTML === '<p><br></p>'
                     ? ''
                     : editor.current.innerHTML;
-            lastValueChange.current = value;
-            onChange(value);
+
+            if (lastValueChange.current !== value) {
+                lastValueChange.current = value;
+                onChange(value);
+            }
         }, 500),
-        []
+        [onChange]
     );
 
     useEffect(() => {
@@ -106,7 +110,9 @@ const RichTextInput: FunctionComponent<Props> = props => {
 
         return () => {
             quillInstance.current.off('text-change', onTextChange);
-            onTextChange.cancel();
+            if (onTextChange.cancel) {
+                onTextChange.cancel();
+            }
             quillInstance.current = null;
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps

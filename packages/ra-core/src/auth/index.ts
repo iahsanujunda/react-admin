@@ -3,11 +3,13 @@ import AuthContext from './AuthContext';
 import useAuthProvider from './useAuthProvider';
 import useAuthState from './useAuthState';
 import usePermissions from './usePermissions';
+import usePermissionsOptimized from './usePermissionsOptimized';
 import useAuthenticated from './useAuthenticated';
 import WithPermissions from './WithPermissions';
 import useLogin from './useLogin';
 import useLogout from './useLogout';
 import useCheckAuth from './useCheckAuth';
+import useGetIdentity from './useGetIdentity';
 import useGetPermissions from './useGetPermissions';
 import useLogoutIfAccessDenied from './useLogoutIfAccessDenied';
 import convertLegacyAuthProvider from './convertLegacyAuthProvider';
@@ -21,9 +23,11 @@ export {
     useLogin,
     useLogout,
     useCheckAuth,
+    useGetIdentity,
     useGetPermissions,
     // hooks with state management
     usePermissions,
+    usePermissionsOptimized,
     useAuthState,
     // hook with immediate effect
     useAuthenticated,

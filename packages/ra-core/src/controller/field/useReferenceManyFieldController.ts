@@ -5,14 +5,15 @@ import isEqual from 'lodash/isEqual';
 import { useSafeSetState, removeEmpty } from '../../util';
 import { useGetManyReference } from '../../dataProvider';
 import { useNotify } from '../../sideEffect';
-import { Record, Sort, RecordMap } from '../../types';
+import { Record, SortPayload, RecordMap } from '../../types';
 import { ListControllerProps } from '../useListController';
 import usePaginationState from '../usePaginationState';
 import useSelectionState from '../useSelectionState';
 import useSortState from '../useSortState';
+import { useResourceContext } from '../../core';
 
 interface Options {
-    basePath: string;
+    basePath?: string;
     data?: RecordMap;
     filter?: any;
     ids?: any[];
@@ -22,7 +23,7 @@ interface Options {
     record?: Record;
     reference: string;
     resource: string;
-    sort?: Sort;
+    sort?: SortPayload;
     source?: string;
     target: string;
     total?: number;
@@ -31,9 +32,9 @@ interface Options {
 const defaultFilter = {};
 
 /**
- * Fetch reference records, and return them when avaliable
+ * Fetch reference records, and return them when available
  *
- * The reference prop sould be the name of one of the <Resource> components
+ * The reference prop should be the name of one of the <Resource> components
  * added as <Admin> child.
  *
  * @example
@@ -51,32 +52,35 @@ const defaultFilter = {};
  *     perPage: 25,
  * });
  *
- * @param {Object} option
- * @param {string} option.resource The current resource name
- * @param {string} option.reference The linked resource name
- * @param {Object} option.record The current resource record
- * @param {string} option.target The target resource key
- * @param {Object} option.filter The filter applied on the recorded records list
- * @param {string} option.source The key of the linked resource identifier
- * @param {string} option.basePath basepath to current resource
- * @param {number} option.page the page number
- * @param {number} option.perPage the number of item per page
- * @param {Object} option.sort the sort to apply to the referenced records
+ * @param {Object} props
+ * @param {string} props.resource The current resource name
+ * @param {string} props.reference The linked resource name
+ * @param {Object} props.record The current resource record
+ * @param {string} props.target The target resource key
+ * @param {Object} props.filter The filter applied on the recorded records list
+ * @param {string} props.source The key of the linked resource identifier
+ * @param {string} props.basePath basepath to current resource
+ * @param {number} props.page the page number
+ * @param {number} props.perPage the number of item per page
+ * @param {Object} props.sort the sort to apply to the referenced records
  *
  * @returns {ReferenceManyProps} The reference many props
  */
-const useReferenceManyFieldController = ({
-    resource,
-    reference,
-    record,
-    target,
-    filter = defaultFilter,
-    source,
-    basePath,
-    page: initialPage,
-    perPage: initialPerPage,
-    sort: initialSort = { field: 'id', order: 'DESC' },
-}: Options): ListControllerProps => {
+const useReferenceManyFieldController = (
+    props: Options
+): ListControllerProps => {
+    const {
+        reference,
+        record,
+        target,
+        filter = defaultFilter,
+        source,
+        basePath,
+        page: initialPage,
+        perPage: initialPerPage,
+        sort: initialSort = { field: 'id', order: 'DESC' },
+    } = props;
+    const resource = useResourceContext(props);
     const notify = useNotify();
 
     // pagination logic
@@ -127,11 +131,11 @@ const useReferenceManyFieldController = ({
     const showFilter = useCallback(
         (filterName: string, defaultValue: any) => {
             setDisplayedFilters(previousState => ({
-                previousState,
+                ...previousState,
                 [filterName]: true,
             }));
             setFilterValues(previousState => ({
-                previousState,
+                ...previousState,
                 [filterName]: defaultValue,
             }));
         },
@@ -168,13 +172,23 @@ const useReferenceManyFieldController = ({
                     typeof error === 'string'
                         ? error
                         : error.message || 'ra.notification.http_error',
-                    'warning'
+                    'warning',
+                    {
+                        _:
+                            typeof error === 'string'
+                                ? error
+                                : error && error.message
+                                ? error.message
+                                : undefined,
+                    }
                 ),
         }
     );
 
     return {
-        basePath: basePath.replace(resource, reference),
+        basePath: basePath
+            ? basePath.replace(resource, reference)
+            : `/${reference}`,
         currentSort: sort,
         data,
         defaultTitle: null,

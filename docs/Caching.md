@@ -26,7 +26,7 @@ In step 4, react-admin displays the post *before* fetching it, because it's alre
 
 Optimistic rendering improves user experience by displaying stale data while getting fresh data from the API, but it does not reduce the ecological footprint of an app, as the web app still makes API requests on every page. 
 
-**Tip**: This design choice explains why react-admin requires that all data provider methods return records of the same shape for a given resource. Otherwise, if the posts returned by `getList()` contain fewer fields than the posts returned by `getOne()`, in the previous scenario, the user will see an incomplete post at step 4.  
+**Tip**: This design choice explains why react-admin requires that all data provider methods return records of the same shape for a given resource. Otherwise, if the posts returned by `getList()` contain fewer fields than the posts returned by `getOne()`, in the previous scenario, the user will see an incomplete post at step 4.
 
 ## HTTP Cache
 
@@ -121,7 +121,7 @@ It's your responsibility to determine the validity date based on the API respons
 
 For instance, to have a `dataProvider` declare responses for `getOne`, `getMany`, and `getList` valid for 5 minutes, you can wrap it in the following proxy:
 
-```ts
+```js
 // in src/dataProvider.js
 import simpleRestProvider from 'ra-data-simple-rest';
 
@@ -129,7 +129,7 @@ const dataProvider = simpleRestProvider('http://path.to.my.api/');
 
 const cacheDataProviderProxy = (dataProvider, duration =  5 * 60 * 1000) =>
     new Proxy(dataProvider, {
-        get: (target, name: string) => (resource, params) => {
+        get: (target, name) => (resource, params) => {
             if (name === 'getOne' || name === 'getMany' || name === 'getList') {
                 return dataProvider[name](resource, params).then(response => {
                     const validUntil = new Date();

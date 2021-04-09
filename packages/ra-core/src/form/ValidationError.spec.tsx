@@ -1,11 +1,10 @@
 import * as React from 'react';
 import polyglotI18nProvider from 'ra-i18n-polyglot';
-import { cleanup } from '@testing-library/react';
 
 import ValidationError from './ValidationError';
 import { TranslationProvider } from '../i18n';
 
-import { renderWithRedux } from '../util';
+import { renderWithRedux } from 'ra-test';
 
 const translate = jest.fn(key => key);
 
@@ -33,7 +32,6 @@ const renderWithTranslations = content =>
 
 describe('ValidationError', () => {
     afterEach(() => {
-        cleanup();
         translate.mockClear();
     });
 
@@ -76,7 +74,7 @@ describe('ValidationError', () => {
             />
         );
 
-        expect(getByText('Min Value 10')).toBeDefined();
+        expect(getByText('Min Value 10')).not.toBeNull();
     });
 
     it('renders the error message translated if it is an object, interpolating strings', () => {
@@ -89,7 +87,7 @@ describe('ValidationError', () => {
             />
         );
 
-        expect(getByText('Must match IAmMatch')).toBeDefined();
+        expect(getByText('Must match IAmMatch')).not.toBeNull();
     });
 
     it('renders the error message translated if it is an object, interpolating arrays', () => {
@@ -102,6 +100,6 @@ describe('ValidationError', () => {
             />
         );
 
-        expect(getByText('Must be one of foo,bar')).toBeDefined();
+        expect(getByText('Must be one of foo,bar')).not.toBeNull();
     });
 });

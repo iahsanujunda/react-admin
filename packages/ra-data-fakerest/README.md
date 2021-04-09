@@ -6,7 +6,7 @@ This package takes a JSON object as input, then creates a client-side data provi
 
 All operations carried out in react-admin are local to the browser, and last only for the current browser session. A browser refresh erases all modifications.
 
-![react-admin demo](http://static.marmelab.com/react-admin.gif)
+[![react-admin-demo](https://marmelab.com/react-admin/img/react-admin-demo-still.png)](https://vimeo.com/268958716)
 
 ## Installation
 
@@ -59,12 +59,12 @@ Here is an example input:
 ```json
 {
     "posts": [
-        { "id": 0, "title": 'Hello, world!' },
-        { "id": 1, "title": 'FooBar' }
+        { "id": 0, "title": "Hello, world!" },
+        { "id": 1, "title": "FooBar" }
     ],
     "comments": [
-        { "id": 0, "post_id": 0, "author": 'John Doe', "body": 'Sensational!' },
-        { "id": 1, "post_id": 0, "author": 'Jane Doe', "body": 'I agree' }
+        { "id": 0, "post_id": 0, "author": "John Doe", "body": "Sensational!" },
+        { "id": 1, "post_id": 0, "author": "Jane Doe", "body": "I agree" }
     ]
 }
 ```
@@ -103,4 +103,4 @@ This data provider uses [FakeRest](https://github.com/marmelab/FakeRest) under t
 
 ## License
 
-This data provider is licensed under the MIT License, and sponsored by [marmelab](http://marmelab.com).
+This data provider is licensed under the MIT License, and sponsored by [marmelab](https://marmelab.com).

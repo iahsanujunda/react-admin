@@ -1,7 +1,7 @@
 # ra-data-graphql
 
 A GraphQL data provider for [react-admin](https://github.com/marmelab/react-admin/)
-built with [Apollo](http://www.apollodata.com/)
+built with [Apollo](https://www.apollodata.com/)
 
 - [Installation](#installation)
 - [Usage](#installation)
@@ -9,7 +9,7 @@ built with [Apollo](http://www.apollodata.com/)
 
 This is a very low level library which is not meant to be used directly unless you really want full control or are building a custom GraphQL data provider.
 
-It provides the foundations for other GraphQL data provider packages such as `ra-data-graphcool` or `ra-data-graphql-simple`
+It provides the foundations for other GraphQL data provider packages such as `ra-data-graphql-simple`
 
 ## About GraphQL and Apollo
 
@@ -100,9 +100,9 @@ buildGraphQLProvider({
 });
 ```
 
-You can pass any options supported by the [ApolloClient](http://dev.apollodata.com/core/apollo-client-api.html#apollo-client) constructor with the addition of `uri` which can be specified so that we create the network interface for you.
+You can pass any options supported by the [ApolloClient](https://www.apollographql.com/docs/react/api/core/ApolloClient/) constructor with the addition of `uri` which can be specified so that we create the network interface for you.
 
-You can also supply your own [ApolloClient](http://dev.apollodata.com/core/apollo-client-api.html#apollo-client) instance directly with:
+You can also supply your own [ApolloClient](https://www.apollographql.com/docs/react/api/core/ApolloClient/) instance directly with:
 
 ```js
 buildGraphQLProvider({ client: myClient });
@@ -120,7 +120,7 @@ buildGraphQLProvider({
 });
 ```
 
-The `./schema` file is a `schema.json` in `./src` retrieved with [`get-graphql-schema --json <graphql_endpoint>`](https://github.com/graphcool/get-graphql-schema).
+The `./schema` file is a `schema.json` in `./src` retrieved with [get-graphql-schema --json <graphql_endpoint>](https://github.com/graphcool/get-graphql-schema).
 
 > Note: Importing the `schema.json` file will significantly increase the bundle size.
 

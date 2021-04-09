@@ -7,7 +7,8 @@ import {
     useRedirect,
     RedirectionSideEffect,
 } from '../../sideEffect';
-import { Record } from '../../types';
+import { Record, OnFailure, OnSuccess } from '../../types';
+import { useResourceContext } from '../../core';
 
 /**
  * Prepare callback for a Delete button with undo support
@@ -46,32 +47,58 @@ import { Record } from '../../types';
  *     );
  * };
  */
-const useDeleteWithUndoController = ({
-    resource,
-    record,
-    basePath,
-    redirect: redirectTo = 'list',
-    onClick,
-}: UseDeleteWithUndoControllerParams): UseDeleteWithUndoControllerReturn => {
+const useDeleteWithUndoController = (
+    props: UseDeleteWithUndoControllerParams
+): UseDeleteWithUndoControllerReturn => {
+    const {
+        record,
+        basePath,
+        redirect: redirectTo = 'list',
+        onClick,
+        onSuccess,
+        onFailure,
+    } = props;
+    const resource = useResourceContext(props);
     const notify = useNotify();
     const redirect = useRedirect();
     const refresh = useRefresh();
 
     const [deleteOne, { loading }] = useDelete(resource, null, null, {
         action: CRUD_DELETE,
-        onSuccess: () => {
-            notify('ra.notification.deleted', 'info', { smart_count: 1 }, true);
-            redirect(redirectTo, basePath);
-            refresh();
-        },
-        onFailure: error =>
-            notify(
-                typeof error === 'string'
-                    ? error
-                    : error.message || 'ra.notification.http_error',
-                'warning'
-            ),
-        undoable: true,
+        onSuccess:
+            onSuccess !== undefined
+                ? onSuccess
+                : () => {
+                      notify(
+                          'ra.notification.deleted',
+                          'info',
+                          { smart_count: 1 },
+                          true
+                      );
+                      redirect(redirectTo, basePath || `/${resource}`);
+                      refresh();
+                  },
+        onFailure:
+            onFailure !== undefined
+                ? onFailure
+                : error => {
+                      notify(
+                          typeof error === 'string'
+                              ? error
+                              : error.message || 'ra.notification.http_error',
+                          'warning',
+                          {
+                              _:
+                                  typeof error === 'string'
+                                      ? error
+                                      : error && error.message
+                                      ? error.message
+                                      : undefined,
+                          }
+                      );
+                      refresh();
+                  },
+        mutationMode: 'undoable',
     });
     const handleDelete = useCallback(
         event => {
@@ -93,8 +120,11 @@ export interface UseDeleteWithUndoControllerParams {
     basePath?: string;
     record?: Record;
     redirect?: RedirectionSideEffect;
-    resource: string;
+    // @deprecated. This hook get the resource from the context
+    resource?: string;
     onClick?: ReactEventHandler<any>;
+    onSuccess?: OnSuccess;
+    onFailure?: OnFailure;
 }
 
 export interface UseDeleteWithUndoControllerReturn {

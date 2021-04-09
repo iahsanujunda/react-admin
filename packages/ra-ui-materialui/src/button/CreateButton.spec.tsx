@@ -1,7 +1,7 @@
-import { render, cleanup } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import * as React from 'react';
 import expect from 'expect';
-import { TestContext } from 'ra-core';
+import { TestContext } from 'ra-test';
 import { ThemeProvider } from '@material-ui/core';
 import { createMuiTheme } from '@material-ui/core/styles';
 import CreateButton from './CreateButton';
@@ -22,8 +22,6 @@ const invalidButtonDomProps = {
 };
 
 describe('<CreateButton />', () => {
-    afterEach(cleanup);
-
     it('should render a button with no DOM errors', () => {
         const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
 

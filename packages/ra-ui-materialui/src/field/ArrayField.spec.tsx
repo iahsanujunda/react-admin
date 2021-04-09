@@ -1,15 +1,13 @@
 import * as React from 'react';
-import { render, cleanup } from '@testing-library/react';
-import { TestContext } from 'ra-core';
+import { render } from '@testing-library/react';
+import { TestContext } from 'ra-test';
 
 import ArrayField from './ArrayField';
 import NumberField from './NumberField';
 import TextField from './TextField';
-import Datagrid from '../list/Datagrid';
+import Datagrid from '../list/datagrid/Datagrid';
 
 describe('<ArrayField />', () => {
-    afterEach(cleanup);
-
     const DummyIterator = props => (
         <Datagrid {...props}>
             <NumberField source="id" />
@@ -39,7 +37,10 @@ describe('<ArrayField />', () => {
                     resource="posts"
                     record={{
                         id: 123,
-                        arr: [{ id: 123, foo: 'bar' }, { id: 456, foo: 'baz' }],
+                        arr: [
+                            { id: 123, foo: 'bar' },
+                            { id: 456, foo: 'baz' },
+                        ],
                     }}
                 >
                     <DummyIterator />

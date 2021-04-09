@@ -10,10 +10,12 @@ import {
     useNotify,
     useUnselectAll,
     CRUD_DELETE_MANY,
-    Identifier,
+    useResourceContext,
+    useListContext,
 } from 'ra-core';
 
 import Button, { ButtonProps } from './Button';
+import { BulkActionProps } from '../types';
 
 const useStyles = makeStyles(
     theme => ({
@@ -38,14 +40,14 @@ const BulkDeleteWithUndoButton: FC<BulkDeleteWithUndoButtonProps> = props => {
         icon,
         label,
         onClick,
-        resource,
-        selectedIds,
         ...rest
     } = props;
+    const { selectedIds } = useListContext(props);
     const classes = useStyles(props);
     const notify = useNotify();
     const unselectAll = useUnselectAll();
     const refresh = useRefresh();
+    const resource = useResourceContext(props);
     const [deleteMany, { loading }] = useDeleteMany(resource, selectedIds, {
         action: CRUD_DELETE_MANY,
         onSuccess: () => {
@@ -63,7 +65,15 @@ const BulkDeleteWithUndoButton: FC<BulkDeleteWithUndoButtonProps> = props => {
                 typeof error === 'string'
                     ? error
                     : error.message || 'ra.notification.http_error',
-                'warning'
+                'warning',
+                {
+                    _:
+                        typeof error === 'string'
+                            ? error
+                            : error && error.message
+                            ? error.message
+                            : undefined,
+                }
             ),
         undoable: true,
     });
@@ -93,25 +103,21 @@ const sanitizeRestProps = ({
     classes,
     filterValues,
     label,
+    selectedIds,
     ...rest
-}: Omit<BulkDeleteWithUndoButtonProps, 'resource' | 'selectedIds' | 'icon'>) =>
-    rest;
+}: Omit<BulkDeleteWithUndoButtonProps, 'resource' | 'icon'>) => rest;
 
-interface Props {
-    basePath?: string;
-    filterValues?: any;
-    icon: ReactElement;
-    resource: string;
-    selectedIds: Identifier[];
+export interface BulkDeleteWithUndoButtonProps
+    extends BulkActionProps,
+        ButtonProps {
+    icon?: ReactElement;
 }
-
-export type BulkDeleteWithUndoButtonProps = Props & ButtonProps;
 
 BulkDeleteWithUndoButton.propTypes = {
     basePath: PropTypes.string,
     classes: PropTypes.object,
     label: PropTypes.string,
-    resource: PropTypes.string.isRequired,
+    resource: PropTypes.string,
     selectedIds: PropTypes.arrayOf(PropTypes.any).isRequired,
     icon: PropTypes.element,
 };

@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import TextField, { TextFieldProps } from '@material-ui/core/TextField';
 import { useInput, FieldTitle, InputProps } from 'ra-core';
 
-import sanitizeRestProps from './sanitizeRestProps';
+import sanitizeInputRestProps from './sanitizeInputRestProps';
 import InputHelperText from './InputHelperText';
 
 /**
@@ -23,6 +23,7 @@ const convertDateToString = (value: Date) => {
 };
 
 const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+const defaultInputLabelProps = { shrink: true };
 
 const getStringFromDate = (value: string | Date) => {
     // null, undefined and empty string values should not go through dateFormatter
@@ -43,9 +44,7 @@ const getStringFromDate = (value: string | Date) => {
     return convertDateToString(new Date(value));
 };
 
-const DateInput: FunctionComponent<
-    InputProps<TextFieldProps> & Omit<TextFieldProps, 'helperText' | 'label'>
-> = ({
+const DateInput: FunctionComponent<DateInputProps> = ({
     format = getStringFromDate,
     label,
     options,
@@ -65,7 +64,7 @@ const DateInput: FunctionComponent<
         id,
         input,
         isRequired,
-        meta: { error, touched },
+        meta: { error, submitError, touched },
     } = useInput({
         format,
         onBlur,
@@ -85,11 +84,11 @@ const DateInput: FunctionComponent<
             variant={variant}
             margin={margin}
             type="date"
-            error={!!(touched && error)}
+            error={!!(touched && (error || submitError))}
             helperText={
                 <InputHelperText
                     touched={touched}
-                    error={error}
+                    error={error || submitError}
                     helperText={helperText}
                 />
             }
@@ -101,11 +100,9 @@ const DateInput: FunctionComponent<
                     isRequired={isRequired}
                 />
             }
-            InputLabelProps={{
-                shrink: true,
-            }}
+            InputLabelProps={defaultInputLabelProps}
             {...options}
-            {...sanitizeRestProps(rest)}
+            {...sanitizeInputRestProps(rest)}
         />
     );
 };
@@ -120,5 +117,8 @@ DateInput.propTypes = {
 DateInput.defaultProps = {
     options: {},
 };
+
+export type DateInputProps = InputProps<TextFieldProps> &
+    Omit<TextFieldProps, 'helperText' | 'label'>;
 
 export default DateInput;

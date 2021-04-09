@@ -1,6 +1,6 @@
 import * as React from 'react';
 import debounce from 'lodash/debounce';
-import { render, fireEvent, waitForElement } from '@testing-library/react';
+import { render, fireEvent, waitFor } from '@testing-library/react';
 import { Form } from 'react-final-form';
 
 import RichTextInput from './index';
@@ -8,6 +8,7 @@ import RichTextInput from './index';
 let container;
 
 jest.mock('lodash/debounce');
+
 describe('RichTextInput', () => {
     beforeEach(() => {
         container = document.createElement('div');
@@ -16,7 +17,7 @@ describe('RichTextInput', () => {
         document.getSelection = () => {
             return {
                 removeAllRanges: () => {},
-                getRangeAt: function() {},
+                getRangeAt: function () {},
             };
         };
     });
@@ -39,7 +40,7 @@ describe('RichTextInput', () => {
                 )}
             />
         );
-        const quillNode = await waitForElement(() => {
+        const quillNode = await waitFor(() => {
             return getByTestId('quill');
         });
         const node = quillNode.querySelector('.ql-editor');

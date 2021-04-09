@@ -1,15 +1,17 @@
 import React, { FC, cloneElement, Children, ReactElement } from 'react';
 import PropTypes from 'prop-types';
 import {
-    Filter,
-    Sort,
+    FilterPayload,
+    SortPayload,
     useReferenceManyFieldController,
-    ListContext,
+    ListContextProvider,
     ListControllerProps,
+    ResourceContextProvider,
+    useRecordContext,
 } from 'ra-core';
 
-import { FieldProps, fieldPropTypes, InjectedFieldProps } from './types';
-import sanitizeRestProps from './sanitizeRestProps';
+import { PublicFieldProps, fieldPropTypes, InjectedFieldProps } from './types';
+import sanitizeFieldRestProps from './sanitizeFieldRestProps';
 
 /**
  * Render related records to the current one.
@@ -64,13 +66,13 @@ export const ReferenceManyField: FC<ReferenceManyFieldProps> = props => {
         filter,
         page = 1,
         perPage,
-        record,
         reference,
         resource,
         sort,
         source,
         target,
     } = props;
+    const record = useRecordContext(props);
 
     if (React.Children.count(children) !== 1) {
         throw new Error(
@@ -92,19 +94,24 @@ export const ReferenceManyField: FC<ReferenceManyFieldProps> = props => {
     });
 
     return (
-        <ListContext.Provider value={controllerProps}>
-            <ReferenceManyFieldView {...props} {...controllerProps} />
-        </ListContext.Provider>
+        <ResourceContextProvider value={reference}>
+            <ListContextProvider value={controllerProps}>
+                <ReferenceManyFieldView {...props} {...controllerProps} />
+            </ListContextProvider>
+        </ResourceContextProvider>
     );
 };
 
-interface ReferenceManyFieldProps extends FieldProps, InjectedFieldProps {
+export interface ReferenceManyFieldProps
+    extends PublicFieldProps,
+        InjectedFieldProps {
     children: ReactElement;
-    filter?: Filter;
+    filter?: FilterPayload;
     page?: number;
+    pagination?: ReactElement;
     perPage?: number;
     reference: string;
-    sort?: Sort;
+    sort?: SortPayload;
     target: string;
 }
 
@@ -137,20 +144,18 @@ ReferenceManyField.defaultProps = {
     addLabel: true,
 };
 
-export const ReferenceManyFieldView: FC<
-    ReferenceManyFieldViewProps
-> = props => {
+export const ReferenceManyFieldView: FC<ReferenceManyFieldViewProps> = props => {
     const { basePath, children, pagination, reference, ...rest } = props;
     return (
         <>
             {cloneElement(Children.only(children), {
-                ...sanitizeRestProps(rest),
+                ...sanitizeFieldRestProps(rest),
                 basePath,
                 resource: reference,
             })}
             {pagination &&
                 props.total !== undefined &&
-                cloneElement(pagination, rest)}
+                cloneElement(pagination)}
         </>
     );
 };
@@ -162,11 +167,10 @@ export interface ReferenceManyFieldViewProps
         >,
         ListControllerProps {
     children: ReactElement;
-    pagination?: ReactElement;
 }
 
 ReferenceManyFieldView.propTypes = {
-    basePath: PropTypes.string,
+    basePath: PropTypes.string.isRequired,
     children: PropTypes.element,
     className: PropTypes.string,
     currentSort: PropTypes.exact({

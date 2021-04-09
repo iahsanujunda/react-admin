@@ -4,16 +4,24 @@ import {
     AutocompleteInput,
     BooleanField,
     Datagrid,
+    DatagridProps,
     DateField,
     DateInput,
     Filter,
+    FilterProps,
+    Identifier,
     List,
+    ListContextProvider,
+    ListProps,
     NullableBooleanInput,
     NumberField,
     ReferenceInput,
+    ReferenceField,
     SearchInput,
     TextField,
     TextInput,
+    useGetList,
+    useListContext,
 } from 'react-admin';
 import { useMediaQuery, Divider, Tabs, Tab, Theme } from '@material-ui/core';
 
@@ -21,34 +29,17 @@ import { makeStyles } from '@material-ui/core/styles';
 
 import NbItemsField from './NbItemsField';
 import CustomerReferenceField from '../visitors/CustomerReferenceField';
+import AddressField from '../visitors/AddressField';
 import MobileGrid from './MobileGrid';
-import {
-    Customer,
-    FilterProps,
-    OrderStatus,
-    DatagridProps,
-    Order,
-    ListComponentProps,
-} from '../types';
-import { Identifier } from 'ra-core';
+import { Customer } from '../types';
 
-interface FilterParams {
-    q?: string;
-    customer_id?: string;
-    date_gte?: string;
-    date_lte?: string;
-    total_gte?: string;
-    returned?: boolean;
-    status?: OrderStatus;
-}
-
-const OrderFilter: FC<FilterProps<FilterParams>> = props => (
+const OrderFilter: FC<Omit<FilterProps, 'children'>> = props => (
     <Filter {...props}>
         <SearchInput source="q" alwaysOn />
         <ReferenceInput source="customer_id" reference="customers">
             <AutocompleteInput
                 optionText={(choice: Customer) =>
-                    choice.first_name && choice.last_name
+                    choice.id // the empty choice is { id: '' }
                         ? `${choice.first_name} ${choice.last_name}`
                         : ''
                 }
@@ -71,22 +62,50 @@ const tabs = [
     { id: 'cancelled', name: 'cancelled' },
 ];
 
-interface TabbedDatagridProps extends DatagridProps<Order> {}
+interface TabbedDatagridProps extends DatagridProps {}
 
-const TabbedDatagrid: FC<TabbedDatagridProps> = ({
-    ids,
-    filterValues,
-    setFilters,
-    displayedFilters,
-    ...rest
-}) => {
+const useGetTotals = (filterValues: any) => {
+    const { total: totalOrdered } = useGetList(
+        'commands',
+        { perPage: 1, page: 1 },
+        { field: 'id', order: 'ASC' },
+        { ...filterValues, status: 'ordered' }
+    );
+    const { total: totalDelivered } = useGetList(
+        'commands',
+        { perPage: 1, page: 1 },
+        { field: 'id', order: 'ASC' },
+        { ...filterValues, status: 'delivered' }
+    );
+    const { total: totalCancelled } = useGetList(
+        'commands',
+        { perPage: 1, page: 1 },
+        { field: 'id', order: 'ASC' },
+        { ...filterValues, status: 'cancelled' }
+    );
+
+    return {
+        ordered: totalOrdered,
+        delivered: totalDelivered,
+        cancelled: totalCancelled,
+    };
+};
+
+const TabbedDatagrid: FC<TabbedDatagridProps> = props => {
+    const listContext = useListContext();
+    const { ids, filterValues, setFilters, displayedFilters } = listContext;
     const classes = useDatagridStyles();
     const isXSmall = useMediaQuery<Theme>(theme =>
         theme.breakpoints.down('xs')
     );
-    const [ordered, setOrdered] = useState<Identifier[]>([]);
-    const [delivered, setDelivered] = useState<Identifier[]>([]);
-    const [cancelled, setCancelled] = useState<Identifier[]>([]);
+    const [ordered, setOrdered] = useState<Identifier[]>([] as Identifier[]);
+    const [delivered, setDelivered] = useState<Identifier[]>(
+        [] as Identifier[]
+    );
+    const [cancelled, setCancelled] = useState<Identifier[]>(
+        [] as Identifier[]
+    );
+    const totals = useGetTotals(filterValues) as any;
 
     useEffect(() => {
         if (ids && ids !== filterValues.status) {
@@ -134,70 +153,109 @@ const TabbedDatagrid: FC<TabbedDatagridProps> = ({
                 {tabs.map(choice => (
                     <Tab
                         key={choice.id}
-                        label={choice.name}
+                        label={
+                            totals[choice.name]
+                                ? `${choice.name} (${totals[choice.name]})`
+                                : choice.name
+                        }
                         value={choice.id}
                     />
                 ))}
             </Tabs>
             <Divider />
             {isXSmall ? (
-                <MobileGrid {...rest} ids={selectedIds} />
+                <ListContextProvider
+                    value={{ ...listContext, ids: selectedIds }}
+                >
+                    <MobileGrid {...props} ids={selectedIds} />
+                </ListContextProvider>
             ) : (
                 <div>
                     {filterValues.status === 'ordered' && (
-                        <Datagrid
-                            {...rest}
-                            ids={ordered}
-                            optimized
-                            rowClick="edit"
+                        <ListContextProvider
+                            value={{ ...listContext, ids: ordered }}
                         >
-                            <DateField source="date" showTime />
-                            <TextField source="reference" />
-                            <CustomerReferenceField />
-                            <NbItemsField />
-                            <NumberField
-                                source="total"
-                                options={{
-                                    style: 'currency',
-                                    currency: 'USD',
-                                }}
-                                className={classes.total}
-                            />
-                        </Datagrid>
+                            <Datagrid {...props} optimized rowClick="edit">
+                                <DateField source="date" showTime />
+                                <TextField source="reference" />
+                                <CustomerReferenceField />
+                                <ReferenceField
+                                    source="customer_id"
+                                    reference="customers"
+                                    link={false}
+                                    label="resources.commands.fields.address"
+                                >
+                                    <AddressField />
+                                </ReferenceField>
+                                <NbItemsField />
+                                <NumberField
+                                    source="total"
+                                    options={{
+                                        style: 'currency',
+                                        currency: 'USD',
+                                    }}
+                                    className={classes.total}
+                                />
+                            </Datagrid>
+                        </ListContextProvider>
                     )}
                     {filterValues.status === 'delivered' && (
-                        <Datagrid {...rest} ids={delivered} rowClick="edit">
-                            <DateField source="date" showTime />
-                            <TextField source="reference" />
-                            <CustomerReferenceField />
-                            <NbItemsField />
-                            <NumberField
-                                source="total"
-                                options={{
-                                    style: 'currency',
-                                    currency: 'USD',
-                                }}
-                                className={classes.total}
-                            />
-                            <BooleanField source="returned" />
-                        </Datagrid>
+                        <ListContextProvider
+                            value={{ ...listContext, ids: delivered }}
+                        >
+                            <Datagrid {...props} rowClick="edit">
+                                <DateField source="date" showTime />
+                                <TextField source="reference" />
+                                <CustomerReferenceField />
+                                <ReferenceField
+                                    source="customer_id"
+                                    reference="customers"
+                                    link={false}
+                                    label="resources.commands.fields.address"
+                                >
+                                    <AddressField />
+                                </ReferenceField>
+                                <NbItemsField />
+                                <NumberField
+                                    source="total"
+                                    options={{
+                                        style: 'currency',
+                                        currency: 'USD',
+                                    }}
+                                    className={classes.total}
+                                />
+                                <BooleanField source="returned" />
+                            </Datagrid>
+                        </ListContextProvider>
                     )}
                     {filterValues.status === 'cancelled' && (
-                        <Datagrid {...rest} ids={cancelled} rowClick="edit">
-                            <DateField source="date" showTime />
-                            <TextField source="reference" />
-                            <CustomerReferenceField />
-                            <NbItemsField />
-                            <NumberField
-                                source="total"
-                                options={{
-                                    style: 'currency',
-                                    currency: 'USD',
-                                }}
-                                className={classes.total}
-                            />
-                            <BooleanField source="returned" />
-                        </Datagrid>
+                        <ListContextProvider
+                            value={{ ...listContext, ids: cancelled }}
+                        >
+                            <Datagrid {...props} rowClick="edit">
+                                <DateField source="date" showTime />
+                                <TextField source="reference" />
+                                <CustomerReferenceField />
+                                <ReferenceField
+                                    source="customer_id"
+                                    reference="customers"
+                                    link={false}
+                                    label="resources.commands.fields.address"
+                                >
+                                    <AddressField />
+                                </ReferenceField>
+                                <NbItemsField />
+                                <NumberField
+                                    source="total"
+                                    options={{
+                                        style: 'currency',
+                                        currency: 'USD',
+                                    }}
+                                    className={classes.total}
+                                />
+                                <BooleanField source="returned" />
+                            </Datagrid>
+                        </ListContextProvider>
                     )}
                 </div>
             )}
@@ -205,7 +263,7 @@ const TabbedDatagrid: FC<TabbedDatagridProps> = ({
     );
 };
 
-const OrderList: FC<ListComponentProps> = props => (
+const OrderList: FC<ListProps> = props => (
     <List
         {...props}
         filterDefaultValues={{ status: 'ordered' }}

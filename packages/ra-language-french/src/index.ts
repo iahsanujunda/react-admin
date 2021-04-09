@@ -7,7 +7,7 @@ const frenchMessages: TranslationMessages = {
             add: 'Ajouter',
             back: 'Retour',
             bulk_actions:
-                '%{smart_count} selectionné |||| %{smart_count} selectionnés',
+                '%{smart_count} sélectionné |||| %{smart_count} sélectionnés',
             cancel: 'Annuler',
             clear_input_value: 'Vider le champ',
             clone: 'Dupliquer',
@@ -34,7 +34,7 @@ const frenchMessages: TranslationMessages = {
         boolean: {
             true: 'Oui',
             false: 'Non',
-            null: '',
+            null: ' ',
         },
         page: {
             create: 'Créer %{name}',
@@ -107,6 +107,12 @@ const frenchMessages: TranslationMessages = {
             page_rows_per_page: 'Lignes par page :',
             next: 'Suivant',
             prev: 'Précédent',
+            skip_nav: 'Aller au contenu',
+        },
+        sort: {
+            sort_by: 'Trier par %{field} %{order}',
+            ASC: 'croissant',
+            DESC: 'décroissant',
         },
         auth: {
             auth_check_error: 'Merci de vous connecter pour continuer',

@@ -115,7 +115,10 @@ describe('inferElementFromValues', () => {
         expect(
             inferElementFromValues(
                 'foo',
-                [[{ bar: 1 }, { bar: 2 }], [{ bar: 3 }, { bar: 4 }]],
+                [
+                    [{ bar: 1 }, { bar: 2 }],
+                    [{ bar: 3 }, { bar: 4 }],
+                ],
                 types
             ).getElement()
         ).toEqual(<Good source="foo">{[<Dummy key="0" source="bar" />]}</Good>);
@@ -126,7 +129,14 @@ describe('inferElementFromValues', () => {
             string: { component: Good },
         };
         expect(
-            inferElementFromValues('foo', [[1, 2], [3, 4]], types).getElement()
+            inferElementFromValues(
+                'foo',
+                [
+                    [1, 2],
+                    [3, 4],
+                ],
+                types
+            ).getElement()
         ).toEqual(<Good source="foo" />);
     });
     it('should return a boolean field for boolean values', () => {
@@ -177,7 +187,7 @@ describe('inferElementFromValues', () => {
             ).getElement()
         ).toEqual(<Good source="foo" />);
     });
-    it('should return an url field for url name', () => {
+    it('should return a url field for url name', () => {
         const types = {
             url: { component: Good },
             string: { component: Bad },
@@ -190,7 +200,7 @@ describe('inferElementFromValues', () => {
             ).getElement()
         ).toEqual(<Good source="url" />);
     });
-    it.skip('should return an url field for url string values', () => {
+    it.skip('should return a url field for url string values', () => {
         const types = {
             url: { component: Good },
             string: { component: Bad },
@@ -263,7 +273,10 @@ describe('inferElementFromValues', () => {
         expect(
             inferElementFromValues(
                 'foo',
-                [{ bar: 1, baz: 2 }, { bar: 3, baz: 4 }],
+                [
+                    { bar: 1, baz: 2 },
+                    { bar: 3, baz: 4 },
+                ],
                 types
             ).getElement()
         ).toEqual(<Good source="foo.bar" />);

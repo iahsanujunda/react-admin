@@ -1,17 +1,24 @@
-import { useContext } from 'react';
+import { useContext, useMemo } from 'react';
+import merge from 'lodash/merge';
 
 import ListContext from './ListContext';
 import { ListControllerProps } from './useListController';
+import { Record } from '../types';
 
 /**
  * Hook to read the list controller props from the ListContext.
  *
- * Must be used within a <ListContext.Provider> (e.g. as a descendent of <List>
+ * Mostly used within a <ListContext.Provider> (e.g. as a descendent of <List>
  * or <ListBase>).
+ *
+ * But you can also use it without a <ListContext.Provider>. In this case, it is up to you
+ * to pass all the necessary props (see the list below).
+ *
+ * The given props will take precedence over context values.
  *
  * @typedef {Object} ListControllerProps
  * @prop {Object}   data an id-based dictionary of the list data, e.g. { 123: { id: 123, title: 'hello world' }, 456: { ... } }
- * @prop {Array}    ids an array listing the ids of the records in the list, e.g [123, 456, ...]
+ * @prop {Array}    ids an array listing the ids of the records in the list, e.g. [123, 456, ...]
  * @prop {integer}  total the total number of results for the current filters, excluding pagination. Useful to build the pagination controls. e.g. 23
  * @prop {boolean}  loaded boolean that is false until the data is available
  * @prop {boolean}  loading boolean that is true on mount, and false once the data was fetched
@@ -25,9 +32,9 @@ import { ListControllerProps } from './useListController';
  * @prop {Function} setFilters a callback to update the filters, e.g. setFilters(filters, displayedFilters)
  * @prop {Object}   displayedFilters a dictionary of the displayed filters, e.g. { title: true, nationality: true }
  * @prop {Function} showFilter a callback to show one of the filters, e.g. showFilter('title', defaultValue)
- * @prop {Function} hideFilter a callback to hide one of the filters, e.g. hidefilter('title')
- * @prop {Array}    selectedIds an array listing the ids of the selcted rows, e.g. [123, 456]
- * @prop {Function} onSelect callback to change the list of selected rows, e.g onSelect([456, 789])
+ * @prop {Function} hideFilter a callback to hide one of the filters, e.g. hideFilter('title')
+ * @prop {Array}    selectedIds an array listing the ids of the selected rows, e.g. [123, 456]
+ * @prop {Function} onSelect callback to change the list of selected rows, e.g. onSelect([456, 789])
  * @prop {Function} onToggleItem callback to toggle the selection of a given record based on its id, e.g. onToggleItem(456)
  * @prop {Function} onUnselectItems callback to clear the selection, e.g. onUnselectItems();
  * @prop {string}   basePath deduced from the location, useful for action buttons
@@ -43,7 +50,7 @@ import { ListControllerProps } from './useListController';
  * import { useListContext } from 'react-admin';
  *
  * const MyList = () => {
- *     const { data, id, loaded } = useListContext();
+ *     const { data, ids, loaded } = useListContext();
  *     if (!loaded) {
  *         return <>Loading...</>;
  *     }
@@ -86,27 +93,79 @@ import { ListControllerProps } from './useListController';
  *     );
  * }
  */
-const useListContext = (props?: any): ListControllerProps => {
+const useListContext = <RecordType extends Record = Record>(
+    props?: any
+): ListControllerProps<RecordType> => {
     const context = useContext(ListContext);
-    if (!context.resource) {
-        /**
-         * The element isn't inside a <ListContext.Provider>
-         *
-         * This may only happen when using Datagrid / SimpleList / SingleFieldList components
-         * outside of a List / ReferenceManyField / ReferenceArrayField -
-         * which isn't documented but tolerated.
-         * To avoid breakage in that case, fallback to props
-         *
-         * @deprecated - to be removed in 4.0
-         */
-        if (process.env.NODE_ENV !== 'production') {
-            console.log(
-                "List components must be used inside a <ListContext.Provider>. Relying on props rather than context to get List data and callbacks is deprecated and won't be supported in the next major version of react-admin."
-            );
-        }
-        return props;
-    }
-    return context;
+    // Props take precedence over the context
+    return useMemo(
+        () =>
+            merge(
+                {},
+                context,
+                props != null ? extractListContextProps(props) : {}
+            ),
+        [context, props]
+    );
 };
 
 export default useListContext;
+
+/**
+ * Extract only the list controller props
+ *
+ * @param {Object} props Props passed to the useListContext hook
+ *
+ * @returns {ListControllerProps} List controller props
+ */
+const extractListContextProps = ({
+    basePath,
+    currentSort,
+    data,
+    defaultTitle,
+    displayedFilters,
+    filterValues,
+    hasCreate,
+    hideFilter,
+    ids,
+    loaded,
+    loading,
+    onSelect,
+    onToggleItem,
+    onUnselectItems,
+    page,
+    perPage,
+    resource,
+    selectedIds,
+    setFilters,
+    setPage,
+    setPerPage,
+    setSort,
+    showFilter,
+    total,
+}) => ({
+    basePath,
+    currentSort,
+    data,
+    defaultTitle,
+    displayedFilters,
+    filterValues,
+    hasCreate,
+    hideFilter,
+    ids,
+    loaded,
+    loading,
+    onSelect,
+    onToggleItem,
+    onUnselectItems,
+    page,
+    perPage,
+    resource,
+    selectedIds,
+    setFilters,
+    setPage,
+    setPerPage,
+    setSort,
+    showFilter,
+    total,
+});

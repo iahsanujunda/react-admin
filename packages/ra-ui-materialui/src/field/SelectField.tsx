@@ -2,11 +2,11 @@ import * as React from 'react';
 import { FC, memo } from 'react';
 import PropTypes from 'prop-types';
 import get from 'lodash/get';
-import { ChoicesProps, useChoices } from 'ra-core';
+import { ChoicesProps, useChoices, useRecordContext } from 'ra-core';
 import Typography from '@material-ui/core/Typography';
 
-import sanitizeRestProps from './sanitizeRestProps';
-import { FieldProps, InjectedFieldProps, fieldPropTypes } from './types';
+import sanitizeFieldRestProps from './sanitizeFieldRestProps';
+import { PublicFieldProps, InjectedFieldProps, fieldPropTypes } from './types';
 
 /**
  * Display a value in an enumeration
@@ -22,7 +22,7 @@ import { FieldProps, InjectedFieldProps, fieldPropTypes } from './types';
  *
  * By default, the text is built by
  * - finding a choice where the 'id' property equals the field value
- * - using the 'name' property an the option text
+ * - using the 'name' property as the option text
  *
  * You can also customize the properties to use for the value and text,
  * thanks to the 'optionValue' and 'optionText' attributes.
@@ -68,17 +68,18 @@ import { FieldProps, InjectedFieldProps, fieldPropTypes } from './types';
  * **Tip**: <ReferenceField> sets `translateChoice` to false by default.
  */
 export const SelectField: FC<SelectFieldProps> = memo<SelectFieldProps>(
-    ({
-        className,
-        emptyText,
-        source,
-        record,
-        choices,
-        optionValue,
-        optionText,
-        translateChoice,
-        ...rest
-    }) => {
+    props => {
+        const {
+            className,
+            emptyText,
+            source,
+            choices,
+            optionValue,
+            optionText,
+            translateChoice,
+            ...rest
+        } = props;
+        const record = useRecordContext(props);
         const value = get(record, source);
         const { getChoiceText, getChoiceValue } = useChoices({
             optionText,
@@ -94,7 +95,7 @@ export const SelectField: FC<SelectFieldProps> = memo<SelectFieldProps>(
                     component="span"
                     variant="body2"
                     className={className}
-                    {...sanitizeRestProps(rest)}
+                    {...sanitizeFieldRestProps(rest)}
                 >
                     {emptyText}
                 </Typography>
@@ -108,7 +109,7 @@ export const SelectField: FC<SelectFieldProps> = memo<SelectFieldProps>(
                 component="span"
                 variant="body2"
                 className={className}
-                {...sanitizeRestProps(rest)}
+                {...sanitizeFieldRestProps(rest)}
             >
                 {choiceText}
             </Typography>
@@ -142,7 +143,7 @@ SelectField.propTypes = {
 
 export interface SelectFieldProps
     extends ChoicesProps,
-        FieldProps,
+        PublicFieldProps,
         InjectedFieldProps {}
 
 SelectField.displayName = 'SelectField';

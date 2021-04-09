@@ -16,11 +16,11 @@ interface Props {
             event?: any,
             callTimePayload?: any,
             callTimeOptions?: any
-        ) => void,
+        ) => void | Promise<any>,
         params: ChildrenFuncParams
     ) => JSX.Element;
     type: string;
-    resource: string;
+    resource?: string;
     payload?: any;
     options?: any;
 }
@@ -35,8 +35,9 @@ interface Props {
  * @param {Object} options
  * @param {string} options.action Redux action type
  * @param {boolean} options.undoable Set to true to run the mutation locally before calling the dataProvider
- * @param {Function} options.onSuccess Side effect function to be executed upon success of failure, e.g. { onSuccess: response => refresh() } }
- * @param {Function} options.onFailure Side effect function to be executed upon failure, e.g. { onFailure: error => notify(error.message) } }
+ * @param {boolean} options.returnPromise Set to true to return the result promise of the mutation
+ * @param {Function} options.onSuccess Side effect function to be executed upon success or failure, e.g. { onSuccess: response => refresh() }
+ * @param {Function} options.onFailure Side effect function to be executed upon failure, e.g. { onFailure: error => notify(error.message) }
  *
  * @example
  *
@@ -57,7 +58,9 @@ const Mutation: FunctionComponent<Props> = ({
     type,
     resource,
     payload,
-    options,
+    // Provides an undefined onSuccess just so the key `onSuccess` is defined
+    // This is used to detect options in useDataProvider
+    options = { onSuccess: undefined },
 }) =>
     children(
         ...useMutation(

@@ -1,6 +1,6 @@
 export const SHOW_NOTIFICATION = 'RA/SHOW_NOTIFICATION';
 
-export type NotificationType = 'info' | 'warning' | 'error';
+export type NotificationType = 'success' | 'info' | 'warning' | 'error';
 
 interface NotificationOptions {
     // The duration in milliseconds the notification is shown
@@ -11,7 +11,7 @@ interface NotificationOptions {
     undoable?: boolean;
 }
 
-export interface Notification {
+export interface NotificationPayload {
     readonly message: string;
     readonly type: NotificationType;
     readonly notificationOptions?: NotificationOptions;
@@ -19,7 +19,7 @@ export interface Notification {
 
 export interface ShowNotificationAction {
     readonly type: typeof SHOW_NOTIFICATION;
-    readonly payload: Notification;
+    readonly payload: NotificationPayload;
 }
 
 /**
@@ -52,4 +52,14 @@ export interface HideNotificationAction {
 
 export const hideNotification = (): HideNotificationAction => ({
     type: HIDE_NOTIFICATION,
+});
+
+export const RESET_NOTIFICATION = 'RA/RESET_NOTIFICATION';
+
+export interface ResetNotificationAction {
+    readonly type: typeof RESET_NOTIFICATION;
+}
+
+export const resetNotification = (): ResetNotificationAction => ({
+    type: RESET_NOTIFICATION,
 });

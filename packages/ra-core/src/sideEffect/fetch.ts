@@ -15,6 +15,7 @@ import {
     fetchActionsWithTotalResponse,
     sanitizeFetchType,
 } from '../core';
+import { DeclarativeSideEffect } from '../dataProvider/useDeclarativeSideEffects';
 
 function validateResponseFormat(
     response,
@@ -73,8 +74,8 @@ interface ActionWithSideEffect {
     meta: {
         fetch: string;
         resource: string;
-        onSuccess?: any;
-        onFailure?: any;
+        onSuccess?: DeclarativeSideEffect;
+        onFailure?: DeclarativeSideEffect;
     };
 }
 
@@ -128,8 +129,8 @@ export function* handleFetch(
     } catch (error) {
         yield put({
             type: `${type}_FAILURE`,
-            error: error.message ? error.message : error,
-            payload: error.body ? error.body : null,
+            error: (error && (error.message ? error.message : error)) || null,
+            payload: (error && error.body) || null,
             requestPayload: payload,
             meta: {
                 ...meta,

@@ -27,25 +27,24 @@ export default App;
 
 Here are all the props accepted by the component:
 
-- [The `<Admin>` Component](#the-admin-component)
-  - [`dataProvider`](#dataprovider)
-  - [`authProvider`](#authprovider)
-  - [`i18nProvider`](#i18nprovider)
-  - [`title`](#title)
-  - [`dashboard`](#dashboard)
-  - [`catchAll`](#catchall)
-  - [`menu`](#menu)
-  - [`theme`](#theme)
-  - [`layout`](#layout)
-  - [`customReducers`](#customreducers)
-  - [`customSagas`](#customsagas)
-  - [`customRoutes`](#customroutes)
-  - [`loginPage`](#loginpage)
-  - [`logoutButton`](#logoutbutton)
-  - [`initialState`](#initialstate)
-  - [`history`](#history)
-  - [Declaring resources at runtime](#declaring-resources-at-runtime)
-  - [Using react-admin without `<Admin>` and `<Resource>`](#using-react-admin-without-admin-and-resource)
+- [`dataProvider`](#dataprovider)
+- [`authProvider`](#authprovider)
+- [`i18nProvider`](#i18nprovider)
+- [`title`](#title)
+- [`dashboard`](#dashboard)
+- [`disableTelemetry`](#disabletelemetry)
+- [`catchAll`](#catchall)
+- [`menu`](#menu)
+- [`theme`](#theme)
+- [`layout`](#layout)
+- [`customReducers`](#customreducers)
+- [`customSagas`](#customsagas)
+- [`customRoutes`](#customroutes)
+- [`loginPage`](#loginpage)
+- [`logoutButton`](#logoutbutton)
+- [`initialState`](#initialstate)
+- [`history`](#history)
+- [`ready`](#ready)
 
 ## `dataProvider`
 
@@ -87,7 +86,7 @@ const App = () => (
 );
 ```
 
-The [Authentication documentation](./Authentication.md) explains how to implement these functions in detail.
+The [Auth Provider documentation](./Authentication.md) explains how to implement these functions in detail.
 
 ## `i18nProvider`
 
@@ -139,6 +138,28 @@ const App = () => (
 ```
 
 ![Custom home page](./img/dashboard.png)
+
+## `disableTelemetry`
+
+In production, react-admin applications send an anonymous request on mount to a telemetry server operated by marmelab. You can see this request by looking at the Network tab of your browser DevTools:
+
+`https://react-admin-telemetry.marmelab.com/react-admin-telemetry`
+
+The only data sent to the telemetry server is the admin domain (e.g. "example.com") - no personal data is ever sent, and no cookie is included in the response. The react-admin team uses these domains to track the usage of the framework.
+
+You can opt out of telemetry by simply adding `disableTelemetry` to the `<Admin>` component:
+
+```jsx
+// in src/App.js
+import * as React from "react";
+import { Admin } from 'react-admin';
+
+const App = () => (
+    <Admin disableTelemetry>
+        // ...
+    </Admin>
+);
+```
 
 ## `catchAll`
 
@@ -278,7 +299,7 @@ For more details on predefined themes and custom themes, refer to the [Material 
 
 If you want to deeply customize the app header, the menu, or the notifications, the best way is to provide a custom layout component. It must contain a `{children}` placeholder, where react-admin will render the resources. If you use material UI fields and inputs, it should contain a `<ThemeProvider>` element. And finally, if you want to show the spinner in the app header when the app fetches data in the background, the Layout should connect to the redux store.
 
-Use the [default layout](https://github.com/marmelab/react-admin/blob/master/packages/ra-ui-materialui/src/layout/Layout.js) as a starting point, and check [the Theming documentation](./Theming.md#using-a-custom-layout) for examples.
+Use the [default layout](https://github.com/marmelab/react-admin/blob/master/packages/ra-ui-materialui/src/layout/Layout.tsx) as a starting point, and check [the Theming documentation](./Theming.md#using-a-custom-layout) for examples.
 
 ```jsx
 // in src/App.js
@@ -314,7 +335,7 @@ For more details on custom layouts, check [the Theming documentation](./Theming.
 
 ## `customReducers`
 
-The `<Admin>` app uses [Redux](http://redux.js.org/) to manage state. The state has the following keys:
+The `<Admin>` app uses [Redux](https://redux.js.org/) to manage state. The state has the following keys:
 
 ```json
 {
@@ -506,7 +527,7 @@ const App = () => (
 
 ## `initialState`
 
-The `initialState` prop lets you pass preloaded state to Redux. See the [Redux Documentation](http://redux.js.org/docs/api/createStore.html#createstorereducer-preloadedstate-enhancer) for more details.
+The `initialState` prop lets you pass preloaded state to Redux. See the [Redux Documentation](https://redux.js.org/docs/api/createStore.html#createstorereducer-preloadedstate-enhancer) for more details.
 
 It accepts either a function or an object:
 
@@ -555,13 +576,41 @@ const App = () => (
 );
 ```
 
+**Caution**: Do not use the 5.x version of the `history` package. It's currently incompatible with another dependency of react-admin, `connected-react-router`. `history@4.10.1` works fine. 
+
+## `ready`
+
+When you run an `<Admin>` with no child `<Resource>`, react-admin displays a "ready" screen:
+
+![Empty Admin](./img/tutorial_empty.png)
+
+You can replace that "ready" screen by passing a custom component as the `ready` prop:
+
+```jsx
+import * as React from 'react';
+import { Admin } from 'react-admin';
+
+const Ready = () => (
+    <div>
+        <h1>Admin ready</h1>
+        <p>You can now add resources</p>
+    </div>
+)
+
+const App = () => (
+    <Admin ready={Ready}>
+        ...
+    </Admin>
+);
+```
+
 ## Declaring resources at runtime
 
 You might want to dynamically define the resources when the app starts. To do so, you have two options: using a function as `<Admin>` child, or unplugging it to use a combination of `AdminContext` and `<AdminUI>` instead.
 
 ### Using a Function As `<Admin>` Child
 
-The `<Admin>` component accepts a function as its child and this function can return a Promise. If you also defined an `authProvider`, the child function will receive the result of a call to `authProvider.getPermissions()` (you can read more about this in the [Authorization](./Authorization.md) chapter).
+The `<Admin>` component accepts a function as its child and this function can return a Promise. If you also defined an `authProvider`, the child function will receive the result of a call to `authProvider.getPermissions()` (you can read more about this in the [Auth Provider](./Authentication.md#authorization) chapter).
 
 For instance, getting the resource from an API might look like:
 
@@ -605,7 +654,8 @@ So it's impossible, for instance, to have a dynamic list of resources based on a
 To overcome this limitation, you can build your own `<Admin>` component using two lower-level components: `<AdminContext>` (responsible for putting the providers in contexts) and `<AdminUI>` (responsible for displaying the UI). Here is an example:
 
 ``` jsx
-import * as React, { useEffect, useState } from 'react';
+import * as React from 'react';
+import { useEffect, useState } from 'react';
 import { AdminContext, AdminUI, Resource, ListGuesser, useDataProvider } from 'react-admin';
 
 function App() {

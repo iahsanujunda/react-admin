@@ -1,10 +1,43 @@
 import * as React from 'react';
 import expect from 'expect';
-import { render, cleanup } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { ReferenceInputView } from './ReferenceInput';
 
 describe('<ReferenceInput />', () => {
     const defaultProps = {
+        possibleValues: {
+            basePath: '',
+            data: {},
+            ids: [],
+            total: 0,
+            loaded: true,
+            loading: false,
+            hasCreate: false,
+            page: 1,
+            setPage: () => {},
+            perPage: 25,
+            setPerPage: () => {},
+            currentSort: {},
+            setSort: () => {},
+            filterValues: {},
+            displayedFilters: [],
+            setFilters: () => {},
+            showFilter: () => {},
+            hideFilter: () => {},
+            selectedIds: [],
+            onSelect: () => {},
+            onToggleItem: () => {},
+            onUnselectItems: () => {},
+            resource: 'comments',
+        },
+        referenceRecord: {
+            data: {},
+            loaded: true,
+            loading: false,
+        },
+        dataStatus: {
+            loading: false,
+        },
         allowEmpty: false,
         basePath: '/posts',
         meta: {},
@@ -23,40 +56,6 @@ describe('<ReferenceInput />', () => {
         loading: false,
     };
     const MyComponent = () => <span id="mycomponent" />;
-
-    afterEach(cleanup);
-
-    it('should render a LinearProgress if loading is true', () => {
-        const { queryByRole } = render(
-            <ReferenceInputView
-                {...{
-                    ...defaultProps,
-                    input: { value: 1 },
-                    loading: true,
-                }}
-            >
-                <MyComponent />
-            </ReferenceInputView>
-        );
-
-        expect(queryByRole('progressbar')).not.toBeNull();
-    });
-
-    it('should not render a LinearProgress if loading is false', () => {
-        const { queryByRole } = render(
-            <ReferenceInputView
-                {...{
-                    ...defaultProps,
-                    choices: [{ id: 1 }],
-                    input: { value: 1 },
-                }}
-            >
-                <MyComponent />
-            </ReferenceInputView>
-        );
-
-        expect(queryByRole('progressbar')).toBeNull();
-    });
 
     it('should display an error if error is defined', () => {
         const { queryByDisplayValue } = render(

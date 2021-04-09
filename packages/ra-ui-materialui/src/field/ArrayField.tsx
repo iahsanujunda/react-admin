@@ -9,9 +9,9 @@ import {
     ReactElement,
 } from 'react';
 import get from 'lodash/get';
-import { Identifier, ListContext } from 'ra-core';
+import { Identifier, ListContextProvider, useRecordContext } from 'ra-core';
 
-import { FieldProps, InjectedFieldProps, fieldPropTypes } from './types';
+import { PublicFieldProps, InjectedFieldProps, fieldPropTypes } from './types';
 import PropTypes from 'prop-types';
 
 const initialState = {
@@ -19,7 +19,11 @@ const initialState = {
     ids: [],
 };
 
-const getDataAndIds = (record: object, source: string, fieldKey: string) => {
+const getDataAndIds = (
+    record: object,
+    source: string,
+    fieldKey: string
+): State => {
     const list = get(record, source);
     if (!list) {
         return initialState;
@@ -111,71 +115,71 @@ const getDataAndIds = (record: object, source: string, fieldKey: string) => {
  *                  <li key={item.name}>{item.name}</li>
  *              ))}
  *          </ul>
- *     )
+ *     );
  *     TagsField.defaultProps = { addLabel: true };
  */
-export const ArrayField: FC<ArrayFieldProps> = memo<ArrayFieldProps>(
-    ({
+export const ArrayField: FC<ArrayFieldProps> = memo<ArrayFieldProps>(props => {
+    const {
         addLabel,
         basePath,
         children,
-        record,
+        record: _record,
         resource,
         sortable,
         source,
         fieldKey,
         ...rest
-    }) => {
-        const [ids, setIds] = useState(initialState.ids);
-        const [data, setData] = useState(initialState.data);
+    } = props;
+    const record = useRecordContext(props);
+    const [ids, setIds] = useState(initialState.ids);
+    const [data, setData] = useState(initialState.data);
 
-        useEffect(() => {
-            const { ids, data } = getDataAndIds(record, source, fieldKey);
-            setIds(ids);
-            setData(data);
-        }, [record, source, fieldKey]);
+    useEffect(() => {
+        const { ids, data } = getDataAndIds(record, source, fieldKey);
+        setIds(ids);
+        setData(data);
+    }, [record, source, fieldKey]);
 
-        return (
-            <ListContext.Provider
-                value={{
-                    ids,
-                    data,
-                    loading: false,
-                    basePath,
-                    selectedIds: [],
-                    currentSort: { field: null, order: null },
-                    displayedFilters: null,
-                    filterValues: null,
-                    hasCreate: null,
-                    hideFilter: null,
-                    loaded: null,
-                    onSelect: null,
-                    onToggleItem: null,
-                    onUnselectItems: null,
-                    page: null,
-                    perPage: null,
-                    resource,
-                    setFilters: null,
-                    setPage: null,
-                    setPerPage: null,
-                    setSort: null,
-                    showFilter: null,
-                    total: null,
-                }}
-            >
-                {cloneElement(Children.only(children), {
-                    ids,
-                    data,
-                    loading: false,
-                    basePath,
-                    currentSort: {},
-                    resource,
-                    ...rest,
-                })}
-            </ListContext.Provider>
-        );
-    }
-);
+    return (
+        <ListContextProvider
+            value={{
+                ids,
+                data,
+                loading: false,
+                basePath,
+                selectedIds: [],
+                currentSort: { field: null, order: null },
+                displayedFilters: null,
+                filterValues: null,
+                hasCreate: null,
+                hideFilter: null,
+                loaded: null,
+                onSelect: null,
+                onToggleItem: null,
+                onUnselectItems: null,
+                page: null,
+                perPage: null,
+                resource,
+                setFilters: null,
+                setPage: null,
+                setPerPage: null,
+                setSort: null,
+                showFilter: null,
+                total: null,
+            }}
+        >
+            {cloneElement(Children.only(children), {
+                ids,
+                data,
+                loading: false,
+                basePath,
+                currentSort: {},
+                resource,
+                ...rest,
+            })}
+        </ListContextProvider>
+    );
+});
 
 ArrayField.defaultProps = {
     addLabel: true,
@@ -186,7 +190,7 @@ ArrayField.propTypes = {
     fieldKey: PropTypes.string,
 };
 
-export interface ArrayFieldProps extends FieldProps, InjectedFieldProps {
+export interface ArrayFieldProps extends PublicFieldProps, InjectedFieldProps {
     fieldKey?: string;
     children: ReactElement;
 }

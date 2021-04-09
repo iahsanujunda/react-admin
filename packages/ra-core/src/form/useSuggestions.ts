@@ -12,7 +12,7 @@ import { useTranslate } from '../i18n';
  * @param emptyText The text to use for the empty suggestion. Defaults to an empty string
  * @param emptyValue The value to use for the empty suggestion. Defaults to `null`
  * @param limitChoicesToValue A boolean indicating whether the initial suggestions should be limited to the currently selected one(s)
- * @param matchSuggestion Optional unless `optionText` is a React element. Function which check wether a choice matches a filter. Must return a boolean.
+ * @param matchSuggestion Optional unless `optionText` is a React element. Function which check whether a choice matches a filter. Must return a boolean.
  * @param optionText Either a string defining the property to use to get the choice text, a function or a React element
  * @param optionValue The property to use to get the choice value
  * @param selectedItem The currently selected item. May be an array of selected items
@@ -45,6 +45,7 @@ const useSuggestions = ({
         translateChoice,
     });
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const getSuggestions = useCallback(
         getSuggestionsFactory({
             allowDuplicates,
@@ -113,11 +114,12 @@ const defaultMatchSuggestion = getChoiceText => (filter, suggestion) => {
 
     return isReactElement
         ? false
-        : suggestionText.match(
-              // We must escape any RegExp reserved characters to avoid errors
-              // For example, the filter might contains * which must be escaped as \*
-              new RegExp(escapeRegExp(filter), 'i')
-          );
+        : suggestionText &&
+              suggestionText.match(
+                  // We must escape any RegExp reserved characters to avoid errors
+                  // For example, the filter might contains * which must be escaped as \*
+                  new RegExp(escapeRegExp(filter), 'i')
+              );
 };
 
 /**

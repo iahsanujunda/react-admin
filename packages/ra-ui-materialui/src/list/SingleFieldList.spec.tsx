@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { render, cleanup } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { createMemoryHistory } from 'history';
 import { Router } from 'react-router-dom';
 import { ListContext } from 'ra-core';
@@ -17,8 +17,6 @@ const renderWithRouter = children => {
 };
 
 describe('<SingleFieldList />', () => {
-    afterEach(cleanup);
-
     it('should render a link to the Edit page of the related record by default', () => {
         const { queryAllByRole } = renderWithRouter(
             <ListContext.Provider
@@ -71,8 +69,8 @@ describe('<SingleFieldList />', () => {
         ]);
     });
 
-    it('should render a link to the Edit page of the related record when the resource is named edit or show', () => {
-        ['edit', 'show'].forEach(action => {
+    ['edit', 'show'].forEach(action => {
+        it(`should render a link to the Edit page of the related record when the resource is named ${action}`, () => {
             const { queryAllByRole } = renderWithRouter(
                 <ListContext.Provider
                     value={{
@@ -92,10 +90,9 @@ describe('<SingleFieldList />', () => {
             );
             const linkElements = queryAllByRole('link');
             expect(linkElements).toHaveLength(2);
-            expect(linkElements.map(link => link.getAttribute('href'))).toEqual(
-                [`/${action}/1`, `/${action}/2`]
-            );
-            cleanup();
+            expect(
+                linkElements.map(link => link.getAttribute('href'))
+            ).toEqual([`/${action}/1`, `/${action}/2`]);
         });
     });
 
@@ -126,8 +123,8 @@ describe('<SingleFieldList />', () => {
         ]);
     });
 
-    it('should render a link to the Edit page of the related record when the resource is named edit or show and linkType is show', () => {
-        ['edit', 'show'].forEach(action => {
+    ['edit', 'show'].forEach(action => {
+        it(`should render a link to the Edit page of the related record when the resource is named ${action} and linkType is show`, () => {
             const { queryAllByRole } = renderWithRouter(
                 <ListContext.Provider
                     value={{
@@ -147,10 +144,9 @@ describe('<SingleFieldList />', () => {
             );
             const linkElements = queryAllByRole('link');
             expect(linkElements).toHaveLength(2);
-            expect(linkElements.map(link => link.getAttribute('href'))).toEqual(
-                [`/${action}/1/show`, `/${action}/2/show`]
-            );
-            cleanup();
+            expect(
+                linkElements.map(link => link.getAttribute('href'))
+            ).toEqual([`/${action}/1/show`, `/${action}/2/show`]);
         });
     });
 

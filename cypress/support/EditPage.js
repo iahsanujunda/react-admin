@@ -2,9 +2,13 @@ export default url => ({
     elements: {
         body: 'body',
         deleteButton: '.ra-delete-button',
+        addBacklinkButton: '.button-add-backlinks',
         input: (name, type = 'input') => {
             if (type === 'rich-text-input') {
                 return `.ra-input-${name} .ql-editor`;
+            }
+            if (type === 'checkbox-group-input') {
+                return `.ra-input-${name} label`;
             }
             if (type === 'reference-array-input') {
                 return `.ra-input div[role=combobox]`;
@@ -45,7 +49,7 @@ export default url => ({
     },
 
     gotoTab(index) {
-        cy.get(this.elements.tab(index)).click();
+        cy.get(this.elements.tab(index)).click({ force: true });
     },
 
     submit() {

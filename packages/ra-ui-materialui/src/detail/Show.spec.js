@@ -1,13 +1,11 @@
 import * as React from 'react';
 import expect from 'expect';
-import { cleanup } from '@testing-library/react';
-import { renderWithRedux, DataProviderContext } from 'ra-core';
+import { DataProviderContext } from 'ra-core';
+import { renderWithRedux } from 'ra-test';
 
-import Show from './Show';
+import { Show } from './Show';
 
 describe('<Show />', () => {
-    afterEach(cleanup);
-
     const defaultShowProps = {
         basePath: '/',
         id: '123',

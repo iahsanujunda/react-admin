@@ -1,11 +1,10 @@
-import { useCallback, useMemo, useEffect } from 'react';
+import { useCallback, useMemo, useEffect, useState } from 'react';
 import { useSelector, useDispatch, shallowEqual } from 'react-redux';
 import { parse, stringify } from 'query-string';
 import lodashDebounce from 'lodash/debounce';
 import set from 'lodash/set';
 import pickBy from 'lodash/pickBy';
-import { Location } from 'history';
-import { useHistory } from 'react-router-dom';
+import { useHistory, useLocation } from 'react-router-dom';
 
 import queryReducer, {
     SET_FILTER,
@@ -15,20 +14,20 @@ import queryReducer, {
     SORT_ASC,
 } from '../reducer/admin/resource/list/queryReducer';
 import { changeListParams, ListParams } from '../actions/listActions';
-import { Sort, ReduxState, Filter } from '../types';
+import { SortPayload, ReduxState, FilterPayload } from '../types';
 import removeEmpty from '../util/removeEmpty';
 import removeKey from '../util/removeKey';
 
 interface ListParamsOptions {
     resource: string;
-    location: Location;
     perPage?: number;
-    sort?: Sort;
+    sort?: SortPayload;
     // default value for a filter when displayed but not yet set
-    filterDefaultValues?: Filter;
-    // permanent filter which always overrides the user entry
-    filter?: Filter;
+    filterDefaultValues?: FilterPayload;
     debounce?: number;
+    // Whether to synchronize the list parameters with the current location (URL search parameters)
+    // This is set to true automatically when a List is used inside a Resource component
+    syncWithLocation?: boolean;
 }
 
 interface Parameters extends ListParams {
@@ -109,15 +108,16 @@ const defaultParams = {};
  */
 const useListParams = ({
     resource,
-    location,
     filterDefaultValues,
-    filter, // permanent filter
     sort = defaultSort,
     perPage = 10,
     debounce = 500,
+    syncWithLocation = false,
 }: ListParamsOptions): [Parameters, Modifiers] => {
     const dispatch = useDispatch();
+    const location = useLocation();
     const history = useHistory();
+    const [localParams, setLocalParams] = useState(defaultParams);
     const params = useSelector(
         (reduxState: ReduxState) =>
             reduxState.admin.resources[resource]
@@ -129,19 +129,22 @@ const useListParams = ({
     const requestSignature = [
         location.search,
         resource,
-        params,
+        syncWithLocation ? params : localParams,
         filterDefaultValues,
         JSON.stringify(sort),
         perPage,
+        syncWithLocation,
     ];
 
-    const queryFromLocation = parseQueryFromLocation(location);
+    const queryFromLocation = syncWithLocation
+        ? parseQueryFromLocation(location)
+        : {};
 
     const query = useMemo(
         () =>
             getQuery({
                 queryFromLocation,
-                params,
+                params: syncWithLocation ? params : localParams,
                 filterDefaultValues,
                 sort,
                 perPage,
@@ -151,7 +154,7 @@ const useListParams = ({
 
     // On mount, if the location includes params (for example from a link like
     // the categories products on the demo), we need to persist them in the
-    // redux state as well so that we don't loose them after a redirection back
+    // redux state as well so that we don't lose them after a redirection back
     // to the list
     useEffect(() => {
         if (Object.keys(queryFromLocation).length > 0) {
@@ -161,14 +164,21 @@ const useListParams = ({
 
     const changeParams = useCallback(action => {
         const newParams = queryReducer(query, action);
-        history.push({
-            search: `?${stringify({
-                ...newParams,
-                filter: JSON.stringify(newParams.filter),
-                displayedFilters: JSON.stringify(newParams.displayedFilters),
-            })}`,
-        });
-        dispatch(changeListParams(resource, newParams));
+        if (syncWithLocation) {
+            history.push({
+                search: `?${stringify({
+                    ...newParams,
+                    filter: JSON.stringify(newParams.filter),
+                    displayedFilters: JSON.stringify(
+                        newParams.displayedFilters
+                    ),
+                })}`,
+                state: { _scrollToTop: action.type === SET_PAGE },
+            });
+            dispatch(changeListParams(resource, newParams));
+        } else {
+            setLocalParams(newParams);
+        }
     }, requestSignature); // eslint-disable-line react-hooks/exhaustive-deps
 
     const setSort = useCallback(
@@ -191,58 +201,68 @@ const useListParams = ({
         requestSignature // eslint-disable-line react-hooks/exhaustive-deps
     );
 
-    const filterValues = useMemo(
-        () => ({ ...(query.filter || emptyObject), ...filter }),
-        [filter, query.filter]
-    );
+    const filterValues = query.filter || emptyObject;
     const displayedFilterValues = query.displayedFilters || emptyObject;
 
-    const debouncedSetFilters = lodashDebounce(
-        (newFilters, newDisplayedFilters) => {
-            let payload = {
-                filter: removeEmpty(newFilters),
-                displayedFilters: undefined,
-            };
-            if (newDisplayedFilters) {
-                payload.displayedFilters = Object.keys(
-                    newDisplayedFilters
-                ).reduce((filters, filter) => {
-                    return newDisplayedFilters[filter]
-                        ? { ...filters, [filter]: true }
-                        : filters;
-                }, {});
-            }
-            changeParams({
-                type: SET_FILTER,
-                payload,
-            });
-        },
-        debounce
-    );
+    const debouncedSetFilters = lodashDebounce((filter, displayedFilters) => {
+        changeParams({
+            type: SET_FILTER,
+            payload: {
+                filter: removeEmpty(filter),
+                displayedFilters,
+            },
+        });
+    }, debounce);
 
     const setFilters = useCallback(
-        (filters, displayedFilters) =>
-            debouncedSetFilters(filters, displayedFilters),
+        (filter, displayedFilters, debounce = true) =>
+            debounce
+                ? debouncedSetFilters(filter, displayedFilters)
+                : changeParams({
+                      type: SET_FILTER,
+                      payload: {
+                          filter: removeEmpty(filter),
+                          displayedFilters,
+                      },
+                  }),
         requestSignature // eslint-disable-line react-hooks/exhaustive-deps
     );
 
     const hideFilter = useCallback((filterName: string) => {
-        const newFilters = removeKey(filterValues, filterName);
-        const newDisplayedFilters = {
-            ...displayedFilterValues,
-            [filterName]: undefined,
-        };
-
-        setFilters(newFilters, newDisplayedFilters);
+        // we don't use lodash.set() for displayed filters
+        // to avoid problems with compound filter names (e.g. 'author.name')
+        const displayedFilters = Object.keys(displayedFilterValues).reduce(
+            (filters, filter) => {
+                return filter !== filterName
+                    ? { ...filters, [filter]: true }
+                    : filters;
+            },
+            {}
+        );
+        const filter = removeEmpty(removeKey(filterValues, filterName));
+        changeParams({
+            type: SET_FILTER,
+            payload: { filter, displayedFilters },
+        });
     }, requestSignature); // eslint-disable-line react-hooks/exhaustive-deps
 
     const showFilter = useCallback((filterName: string, defaultValue: any) => {
-        const newFilters = set(filterValues, filterName, defaultValue);
-        const newDisplayedFilters = {
+        // we don't use lodash.set() for displayed filters
+        // to avoid problems with compound filter names (e.g. 'author.name')
+        const displayedFilters = {
             ...displayedFilterValues,
             [filterName]: true,
         };
-        setFilters(newFilters, newDisplayedFilters);
+        const filter = defaultValue
+            ? set(filterValues, filterName, defaultValue)
+            : filterValues;
+        changeParams({
+            type: SET_FILTER,
+            payload: {
+                filter,
+                displayedFilters,
+            },
+        });
     }, requestSignature); // eslint-disable-line react-hooks/exhaustive-deps
 
     return [

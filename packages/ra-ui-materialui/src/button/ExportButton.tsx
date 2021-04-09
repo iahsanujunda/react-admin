@@ -7,9 +7,10 @@ import {
     useDataProvider,
     useNotify,
     useListContext,
-    Sort,
+    SortPayload,
     Exporter,
-    Filter,
+    FilterPayload,
+    useResourceContext,
 } from 'ra-core';
 import Button, { ButtonProps } from './Button';
 
@@ -24,11 +25,13 @@ const ExportButton: FunctionComponent<ExportButtonProps> = props => {
         ...rest
     } = props;
     const {
+        filter,
         filterValues,
-        resource,
         currentSort,
         exporter: exporterFromContext,
+        total,
     } = useListContext(props);
+    const resource = useResourceContext(props);
     const exporter = customExporter || exporterFromContext;
     const dataProvider = useDataProvider();
     const notify = useNotify();
@@ -37,7 +40,9 @@ const ExportButton: FunctionComponent<ExportButtonProps> = props => {
             dataProvider
                 .getList(resource, {
                     sort: currentSort || sort,
-                    filter: filterValues,
+                    filter: filter
+                        ? { ...filterValues, ...filter }
+                        : filterValues,
                     pagination: { page: 1, perPage: maxResults },
                 })
                 .then(
@@ -62,6 +67,7 @@ const ExportButton: FunctionComponent<ExportButtonProps> = props => {
             currentSort,
             dataProvider,
             exporter,
+            filter,
             filterValues,
             maxResults,
             notify,
@@ -75,6 +81,7 @@ const ExportButton: FunctionComponent<ExportButtonProps> = props => {
         <Button
             onClick={handleClick}
             label={label}
+            disabled={total === 0}
             {...sanitizeRestProps(rest)}
         >
             {icon}
@@ -95,13 +102,13 @@ const sanitizeRestProps = ({
 interface Props {
     basePath?: string;
     exporter?: Exporter;
-    filterValues?: Filter;
+    filterValues?: FilterPayload;
     icon?: JSX.Element;
     label?: string;
     maxResults?: number;
     onClick?: (e: Event) => void;
     resource?: string;
-    sort?: Sort;
+    sort?: SortPayload;
 }
 
 export type ExportButtonProps = Props & ButtonProps;
@@ -112,7 +119,7 @@ ExportButton.propTypes = {
     filterValues: PropTypes.object,
     label: PropTypes.string,
     maxResults: PropTypes.number,
-    resource: PropTypes.string.isRequired,
+    resource: PropTypes.string,
     sort: PropTypes.exact({
         field: PropTypes.string,
         order: PropTypes.string,

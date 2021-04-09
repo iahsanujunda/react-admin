@@ -1,13 +1,11 @@
 import * as React from 'react';
-import { render, cleanup, fireEvent } from '@testing-library/react';
+import { render, fireEvent } from '@testing-library/react';
 import { Form } from 'react-final-form';
 import { required } from 'ra-core/lib';
 
 import NumberInput from './NumberInput';
 
 describe('<NumberInput />', () => {
-    afterEach(cleanup);
-
     const defaultProps = {
         source: 'views',
         resource: 'posts',
@@ -122,7 +120,7 @@ describe('<NumberInput />', () => {
                 />
             );
             const input = getByLabelText('resources.posts.fields.views');
-            fireEvent.focus(input);
+            input.focus();
             expect(onFocus).toHaveBeenCalled();
         });
 
@@ -142,7 +140,7 @@ describe('<NumberInput />', () => {
                 />
             );
             const input = getByLabelText('resources.posts.fields.views');
-            fireEvent.focus(input);
+            input.focus();
             expect(formApi.getState().active).toEqual('views');
         });
     });
@@ -160,7 +158,8 @@ describe('<NumberInput />', () => {
                 />
             );
             const input = getByLabelText('resources.posts.fields.views');
-            fireEvent.blur(input);
+            input.focus();
+            input.blur();
             expect(onBlur).toHaveBeenCalled();
         });
 
@@ -180,9 +179,9 @@ describe('<NumberInput />', () => {
                 />
             );
             const input = getByLabelText('resources.posts.fields.views');
-            fireEvent.focus(input);
+            input.focus();
             expect(formApi.getState().active).toEqual('views');
-            fireEvent.blur(input);
+            input.blur();
             expect(onBlur).toHaveBeenCalled();
             expect(formApi.getState().active).toBeUndefined();
         });
@@ -214,7 +213,7 @@ describe('<NumberInput />', () => {
             );
             const input = getByLabelText('resources.posts.fields.views *');
             fireEvent.change(input, { target: { value: '3' } });
-            fireEvent.blur(input);
+            input.blur();
 
             const error = queryByText('ra.validation.required');
             expect(error).toBeNull();
@@ -231,7 +230,8 @@ describe('<NumberInput />', () => {
                 />
             );
             const input = getByLabelText('resources.posts.fields.views *');
-            fireEvent.blur(input);
+            input.focus();
+            input.blur();
 
             const error = getByText('ra.validation.required');
             expect(error).not.toBeNull();

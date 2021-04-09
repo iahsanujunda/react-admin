@@ -1,19 +1,22 @@
 import * as React from 'react';
 import { FC } from 'react';
-import { Datagrid, DateField, TextField } from 'react-admin';
-import { makeStyles, useTheme } from '@material-ui/core/styles';
+import {
+    Identifier,
+    Datagrid,
+    DateField,
+    TextField,
+    DatagridProps,
+} from 'react-admin';
+import { makeStyles } from '@material-ui/core/styles';
 
 import ProductReferenceField from '../products/ProductReferenceField';
 import CustomerReferenceField from '../visitors/CustomerReferenceField';
 import StarRatingField from './StarRatingField';
-
 import rowStyle from './rowStyle';
-import { DatagridProps } from './../types';
-import { Identifier } from 'ra-core';
 
 const useListStyles = makeStyles({
     headerRow: {
-        borderLeftColor: 'white',
+        borderLeftColor: 'transparent',
         borderLeftWidth: 5,
         borderLeftStyle: 'solid',
     },
@@ -40,11 +43,11 @@ const ReviewListDesktop: FC<ReviewListDesktopProps> = ({
     ...props
 }) => {
     const classes = useListStyles();
-    const theme = useTheme();
     return (
         <Datagrid
             rowClick="edit"
-            rowStyle={selectedRow ? rowStyle(selectedRow, theme) : undefined}
+            // @ts-ignore
+            rowStyle={rowStyle(selectedRow)}
             classes={{
                 headerRow: classes.headerRow,
                 headerCell: classes.headerCell,

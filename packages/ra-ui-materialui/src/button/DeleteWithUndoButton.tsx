@@ -9,6 +9,9 @@ import {
     Record,
     RedirectionSideEffect,
     useDeleteWithUndoController,
+    OnSuccess,
+    OnFailure,
+    useResourceContext,
 } from 'ra-core';
 
 import Button, { ButtonProps } from './Button';
@@ -20,19 +23,23 @@ const DeleteWithUndoButton: FC<DeleteWithUndoButtonProps> = props => {
         className,
         icon = defaultIcon,
         onClick,
-        resource,
         record,
         basePath,
         redirect = 'list',
+        onSuccess,
+        onFailure,
         ...rest
     } = props;
     const classes = useStyles(props);
+    const resource = useResourceContext(props);
     const { loading, handleDelete } = useDeleteWithUndoController({
-        resource,
         record,
+        resource,
         basePath,
         redirect,
         onClick,
+        onSuccess,
+        onFailure,
     });
 
     return (
@@ -87,6 +94,8 @@ interface Props {
     saving?: boolean;
     submitOnEnter?: boolean;
     undoable?: boolean;
+    onSuccess?: OnSuccess;
+    onFailure?: OnFailure;
 }
 
 const defaultIcon = <ActionDelete />;

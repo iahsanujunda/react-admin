@@ -5,6 +5,7 @@ import { createSelector } from 'reselect';
 import debounce from 'lodash/debounce';
 import union from 'lodash/union';
 import isEqual from 'lodash/isEqual';
+import get from 'lodash/get';
 
 import { CRUD_GET_MANY } from '../actions/dataActions/crudGetMany';
 import { Identifier, Record, ReduxState, DataProviderProxy } from '../types';
@@ -22,6 +23,11 @@ interface Query {
 }
 interface QueriesToCall {
     [resource: string]: Query[];
+}
+interface UseGetManyOptions {
+    onSuccess?: Callback;
+    onFailure?: Callback;
+    enabled?: boolean;
 }
 interface UseGetManyResult {
     data: Record[];
@@ -58,7 +64,10 @@ const DataProviderOptions = { action: CRUD_GET_MANY };
  *
  * @param resource The resource name, e.g. 'posts'
  * @param ids The resource identifiers, e.g. [123, 456, 789]
- * @param options Options object to pass to the dataProvider. May include side effects to be executed upon success of failure, e.g. { onSuccess: { refresh: true } }
+ * @param {Object} options Options object to pass to the dataProvider.
+ * @param {boolean} options.enabled Flag to conditionally run the query. If it's false, the query will not run
+ * @param {Function} options.onSuccess Side effect function to be executed upon success, e.g. { onSuccess: { refresh: true } }
+ * @param {Function} options.onFailure Side effect function to be executed upon failure, e.g. { onFailure: error => notify(error.message) }
  *
  * @returns The current request state. Destructure as { data, error, loading, loaded }.
  *
@@ -82,7 +91,7 @@ const DataProviderOptions = { action: CRUD_GET_MANY };
 const useGetMany = (
     resource: string,
     ids: Identifier[],
-    options: any = {}
+    options: UseGetManyOptions = {}
 ): UseGetManyResult => {
     // we can't use useQueryWithStore here because we're aggregating queries first
     // therefore part of the useQueryWithStore logic will have to be repeated below
@@ -143,12 +152,14 @@ const useGetMany = (
  */
 const makeGetManySelector = () =>
     createSelector(
-        (state: ReduxState) => state.admin.resources,
-        (_, resource) => resource,
-        (_, __, ids) => ids,
-        (resources, resource, ids) =>
-            resources[resource]
-                ? ids.map(id => resources[resource].data[id])
+        [
+            (state: ReduxState, resource) =>
+                get(state, ['admin', 'resources', resource, 'data']),
+            (_, __, ids) => ids,
+        ],
+        (resourceData, ids) =>
+            resourceData
+                ? ids.map(id => resourceData[id])
                 : ids.map(id => undefined)
     );
 

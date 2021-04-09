@@ -1,4 +1,4 @@
-import { TranslationMessages } from 'ra-core';
+import { TranslationMessages } from 'react-admin';
 import englishMessages from 'ra-language-english';
 
 const customEnglishMessages: TranslationMessages = {
@@ -17,7 +17,9 @@ const customEnglishMessages: TranslationMessages = {
             month_history: '30 Day Revenue History',
             new_orders: 'New Orders',
             pending_reviews: 'Pending Reviews',
+            all_reviews: 'See all reviews',
             new_customers: 'New Customers',
+            all_customers: 'See all customers',
             pending_orders: 'Pending Orders',
             order: {
                 items:
@@ -27,7 +29,7 @@ const customEnglishMessages: TranslationMessages = {
                 title: 'Welcome to the react-admin e-commerce demo',
                 subtitle:
                     "This is the admin of an imaginary poster shop. Feel free to explore and modify the data - it's local to your computer, and will reset each time you reload.",
-                aor_button: 'react-admin site',
+                ra_button: 'react-admin site',
                 demo_button: 'Source for this demo',
             },
         },
@@ -50,6 +52,7 @@ const customEnglishMessages: TranslationMessages = {
                 total_spent: 'Total spent',
                 password: 'Password',
                 confirm_password: 'Confirm password',
+                stateAbbr: 'State',
             },
             filters: {
                 last_visited: 'Last visited',
@@ -90,15 +93,25 @@ const customEnglishMessages: TranslationMessages = {
                     quantity: 'Quantity',
                     sum: 'Sum',
                     tax_rate: 'Tax Rate',
+                    taxes: 'Tax',
                     total: 'Total',
                     unit_price: 'Unit Price',
                 },
+                address: 'Address',
                 customer_id: 'Customer',
                 date_gte: 'Passed Since',
                 date_lte: 'Passed Before',
+                nb_items: 'Nb Items',
                 total_gte: 'Min amount',
                 status: 'Status',
                 returned: 'Returned',
+            },
+            section: {
+                order: 'Order',
+                customer: 'Customer',
+                shipping_address: 'Shipping Address',
+                items: 'Items',
+                total: 'Totals',
             },
         },
         invoices: {
@@ -123,6 +136,7 @@ const customEnglishMessages: TranslationMessages = {
                 image: 'Image',
                 price: 'Price',
                 reference: 'Reference',
+                sales: 'Sales',
                 stock_lte: 'Low Stock',
                 stock: 'Stock',
                 thumbnail: 'Thumbnail',
@@ -135,6 +149,19 @@ const customEnglishMessages: TranslationMessages = {
                 details: 'Details',
                 description: 'Description',
                 reviews: 'Reviews',
+            },
+            filters: {
+                categories: 'Categories',
+                stock: 'Stock',
+                no_stock: 'Out of stock',
+                low_stock: '1 - 9 items',
+                average_stock: '10 - 49 items',
+                enough_stock: '50 items & more',
+                sales: 'Sales',
+                best_sellers: 'Best sellers',
+                average_sellers: 'Average',
+                low_sellers: 'Low',
+                never_sold: 'Never sold',
             },
         },
         categories: {

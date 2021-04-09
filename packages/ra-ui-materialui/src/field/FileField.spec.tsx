@@ -1,7 +1,9 @@
 import * as React from 'react';
 import expect from 'expect';
+import { render } from '@testing-library/react';
+import { RecordContextProvider } from 'ra-core';
+
 import FileField from './FileField';
-import { render, cleanup } from '@testing-library/react';
 
 const defaultProps = {
     classes: {},
@@ -9,8 +11,6 @@ const defaultProps = {
 };
 
 describe('<FileField />', () => {
-    afterEach(cleanup);
-
     it('should return an empty div when record is not set', () => {
         const { container } = render(<FileField {...defaultProps} />);
         expect(container.firstChild.textContent).toEqual('');
@@ -41,6 +41,24 @@ describe('<FileField />', () => {
                 }}
                 title="title"
             />
+        );
+
+        const link = getByTitle('Hello world!') as HTMLAnchorElement;
+        expect(link.href).toEqual('http://foo.com/bar.jpg');
+        expect(link.title).toEqual('Hello world!');
+    });
+
+    it('should use record from RecordContext', () => {
+        const { getByTitle } = render(
+            <RecordContextProvider
+                value={{
+                    id: 123,
+                    url: 'http://foo.com/bar.jpg',
+                    title: 'Hello world!',
+                }}
+            >
+                <FileField {...defaultProps} title="title" />
+            </RecordContextProvider>
         );
 
         const link = getByTitle('Hello world!') as HTMLAnchorElement;

@@ -3,63 +3,56 @@ import { useCallback, FunctionComponent } from 'react';
 import PropTypes from 'prop-types';
 import get from 'lodash/get';
 import MenuItem from '@material-ui/core/MenuItem';
+import { TextFieldProps } from '@material-ui/core/TextField';
 import { makeStyles } from '@material-ui/core/styles';
 import {
     useInput,
     FieldTitle,
     useTranslate,
-    InputProps,
-    ChoicesProps,
+    ChoicesInputProps,
     useChoices,
+    warning,
 } from 'ra-core';
 
 import ResettableTextField from './ResettableTextField';
 import InputHelperText from './InputHelperText';
-import { TextFieldProps } from '@material-ui/core/TextField';
+import sanitizeInputRestProps from './sanitizeInputRestProps';
+import Labeled from './Labeled';
+import { LinearProgress } from '../layout';
 
 const sanitizeRestProps = ({
     addLabel,
-    allowEmpty,
-    alwaysOn,
-    emptyValue,
-    basePath,
+    afterSubmit,
+    allowNull,
+    beforeSubmit,
     choices,
     className,
-    component,
     crudGetMatching,
     crudGetOne,
-    defaultValue,
+    data,
     filter,
     filterToQuery,
-    formClassName,
-    initializeForm,
-    initialValue,
-    input,
-    isRequired,
-    label,
-    locale,
-    meta,
-    onChange,
-    options,
-    optionValue,
-    optionText,
-    disableValue,
+    formatOnBlur,
+    isEqual,
+    limitChoicesToValue,
+    multiple,
+    name,
     pagination,
     perPage,
-    record,
+    ref,
     reference,
-    resource,
+    render,
     setFilter,
     setPagination,
     setSort,
     sort,
-    source,
-    textAlign,
-    translate,
-    translateChoice,
+    subscription,
+    type,
+    validateFields,
     validation,
+    value,
     ...rest
-}: any) => rest;
+}: any) => sanitizeInputRestProps(rest);
 
 const useStyles = makeStyles(
     theme => ({
@@ -77,7 +70,7 @@ const useStyles = makeStyles(
  *
  * By default, the options are built from:
  *  - the 'id' property as the option value,
- *  - the 'name' property an the option text
+ *  - the 'name' property as the option text
  * @example
  * const choices = [
  *    { id: 'M', name: 'Male' },
@@ -144,11 +137,7 @@ const useStyles = makeStyles(
  * <SelectInput source="gender" choices={choices} disableValue="not_available" />
  *
  */
-const SelectInput: FunctionComponent<
-    ChoicesProps &
-        InputProps<TextFieldProps> &
-        Omit<TextFieldProps, 'label' | 'helperText'>
-> = props => {
+const SelectInput: FunctionComponent<SelectInputProps> = props => {
     const {
         allowEmpty,
         choices = [],
@@ -160,6 +149,8 @@ const SelectInput: FunctionComponent<
         format,
         helperText,
         label,
+        loaded,
+        loading,
         onBlur,
         onChange,
         onFocus,
@@ -175,18 +166,24 @@ const SelectInput: FunctionComponent<
     } = props;
     const translate = useTranslate();
     const classes = useStyles(props);
+
+    warning(
+        source === undefined,
+        `If you're not wrapping the SelectInput inside a ReferenceInput, you must provide the source prop`
+    );
+
+    warning(
+        choices === undefined,
+        `If you're not wrapping the SelectInput inside a ReferenceInput, you must provide the choices prop`
+    );
+
     const { getChoiceText, getChoiceValue } = useChoices({
         optionText,
         optionValue,
         translateChoice,
     });
 
-    const {
-        id,
-        input,
-        isRequired,
-        meta: { error, touched },
-    } = useInput({
+    const { id, input, isRequired, meta } = useInput({
         format,
         onBlur,
         onChange,
@@ -197,6 +194,8 @@ const SelectInput: FunctionComponent<
         validate,
         ...rest,
     });
+
+    const { touched, error, submitError } = meta;
 
     const renderEmptyItemOption = useCallback(() => {
         return React.isValidElement(emptyText)
@@ -209,6 +208,23 @@ const SelectInput: FunctionComponent<
     const renderMenuItemOption = useCallback(choice => getChoiceText(choice), [
         getChoiceText,
     ]);
+
+    if (loading) {
+        return (
+            <Labeled
+                id={id}
+                label={label}
+                source={source}
+                resource={resource}
+                className={className}
+                isRequired={isRequired}
+                meta={meta}
+                input={input}
+            >
+                <LinearProgress />
+            </Labeled>
+        );
+    }
 
     return (
         <ResettableTextField
@@ -228,11 +244,11 @@ const SelectInput: FunctionComponent<
             }
             className={`${classes.input} ${className}`}
             clearAlwaysVisible
-            error={!!(touched && error)}
+            error={!!(touched && (error || submitError))}
             helperText={
                 <InputHelperText
                     touched={touched}
-                    error={error}
+                    error={error || submitError}
                     helperText={helperText}
                 />
             }
@@ -293,5 +309,8 @@ SelectInput.defaultProps = {
     translateChoice: true,
     disableValue: 'disabled',
 };
+
+export type SelectInputProps = ChoicesInputProps<TextFieldProps> &
+    Omit<TextFieldProps, 'label' | 'helperText'>;
 
 export default SelectInput;

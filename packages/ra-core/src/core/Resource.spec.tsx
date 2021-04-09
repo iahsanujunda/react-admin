@@ -1,12 +1,12 @@
 import * as React from 'react';
 import expect from 'expect';
-import { cleanup, wait } from '@testing-library/react';
+import { waitFor } from '@testing-library/react';
 import { Router } from 'react-router-dom';
 import { createMemoryHistory } from 'history';
 
 import Resource from './Resource';
 import { registerResource, unregisterResource } from '../actions';
-import renderWithRedux from '../util/renderWithRedux';
+import { renderWithRedux } from 'ra-test';
 import AuthContext from '../auth/AuthContext';
 
 const PostList = () => <div>PostList</div>;
@@ -26,8 +26,6 @@ const resource = {
 };
 
 describe('<Resource>', () => {
-    afterEach(cleanup);
-
     it(`registers its resource in redux on mount when context is 'registration'`, () => {
         const { dispatch } = renderWithRedux(
             <Resource {...resource} intent="registration" />
@@ -44,13 +42,17 @@ describe('<Resource>', () => {
             })
         );
     });
-    it(`unregister its resource from redux on unmount when context is 'registration'`, () => {
+    it(`unregister its resource from redux on unmount when context is 'registration'`, async () => {
         const { unmount, dispatch } = renderWithRedux(
             <Resource {...resource} intent="registration" />
         );
         unmount();
-        expect(dispatch).toHaveBeenCalledTimes(2);
-        expect(dispatch.mock.calls[1][0]).toEqual(unregisterResource('posts'));
+        await waitFor(() => {
+            expect(dispatch).toHaveBeenCalledTimes(2);
+            expect(dispatch.mock.calls[1][0]).toEqual(
+                unregisterResource('posts')
+            );
+        });
     });
     it('renders resource routes by default', () => {
         const history = createMemoryHistory();
@@ -69,13 +71,13 @@ describe('<Resource>', () => {
             { admin: { resources: { posts: {} } } }
         );
         history.push('/posts');
-        expect(getByText('PostList')).toBeDefined();
+        expect(getByText('PostList')).not.toBeNull();
         history.push('/posts/123');
-        expect(getByText('PostEdit')).toBeDefined();
+        expect(getByText('PostEdit')).not.toBeNull();
         history.push('/posts/123/show');
-        expect(getByText('PostShow')).toBeDefined();
+        expect(getByText('PostShow')).not.toBeNull();
         history.push('/posts/create');
-        expect(getByText('PostCreate')).toBeDefined();
+        expect(getByText('PostCreate')).not.toBeNull();
     });
     it('injects permissions to the resource routes', async () => {
         const history = createMemoryHistory();
@@ -107,7 +109,8 @@ describe('<Resource>', () => {
             { admin: { resources: { posts: {} } } }
         );
         history.push('/posts');
-        await wait();
-        expect(getByText('Permissions: admin')).toBeDefined();
+        await waitFor(() => {
+            expect(getByText('Permissions: admin')).not.toBeNull();
+        });
     });
 });

@@ -27,12 +27,12 @@ describe('References data status', () => {
             test(
                 data,
                 true,
-                'we must wait until the references fetch is finished and there is no reference already associated with the resource.'
+                'we must waitFor until the references fetch is finished and there is no reference already associated with the resource.'
             );
             test(
                 { ...data, input: { value: 1 } },
                 true,
-                'we must wait until the references fetch is finished and linked reference data are not found.'
+                'we must waitFor until the references fetch is finished and linked reference data are not found.'
             );
             test(
                 { ...data, input: { value: 1 }, referenceRecord: [{ id: 1 }] },
@@ -106,7 +106,7 @@ describe('References data status', () => {
                     referenceRecord: null,
                 },
                 null,
-                'there is no error if there is a linked reference without data but the references fetch succeeds  even empty'
+                'there is no error if there is a linked reference without data but the references fetch succeeds even empty'
             );
             test(
                 {
@@ -268,12 +268,12 @@ describe('References data status', () => {
             test(
                 data,
                 true,
-                'we must wait until the references fetch is finished and there is no reference already associated with the resource.'
+                'we must waitFor until the references fetch is finished and there is no reference already associated with the resource.'
             );
             test(
                 { ...data, input: { value: [1, 2] } },
                 true,
-                'we must wait until the references fetch is finished and linked references data are not found.'
+                'we must waitFor until the references fetch is finished and linked references data are not found.'
             );
             test(
                 {
@@ -351,7 +351,7 @@ describe('References data status', () => {
                     referenceRecords: [],
                 },
                 null,
-                'there is no error if there is a linked reference without data but the references fetch succeeds  even empty'
+                'there is no error if there is a linked reference without data but the references fetch succeeds even empty'
             );
             test(
                 {

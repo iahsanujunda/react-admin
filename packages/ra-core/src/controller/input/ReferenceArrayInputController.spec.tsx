@@ -1,33 +1,40 @@
 import * as React from 'react';
 import expect from 'expect';
-import { cleanup, wait, fireEvent } from '@testing-library/react';
-import ReferenceArrayInputController from './ReferenceArrayInputController';
-import { renderWithRedux } from '../../util';
+import { waitFor, fireEvent } from '@testing-library/react';
+import { Form } from 'react-final-form';
+import { renderWithRedux } from 'ra-test';
+import ReferenceArrayInputController, {
+    ReferenceArrayInputControllerChildrenFuncParams,
+} from './ReferenceArrayInputController';
 import { CRUD_GET_MATCHING, CRUD_GET_MANY } from '../../../lib';
+import { SORT_ASC } from '../../reducer/admin/resource/list/queryReducer';
 
 describe('<ReferenceArrayInputController />', () => {
     const defaultProps = {
         input: { value: undefined },
         record: undefined,
-        basePath: '/tags',
         reference: 'tags',
+        basePath: '/posts',
         resource: 'posts',
         source: 'tag_ids',
     };
-
-    afterEach(cleanup);
 
     it('should set loading to true as long as there are no references fetched and no selected references', () => {
         const children = jest.fn(({ loading }) => (
             <div>{loading.toString()}</div>
         ));
         const { queryByText } = renderWithRedux(
-            <ReferenceArrayInputController
-                {...defaultProps}
-                input={{ value: [1, 2] }}
-            >
-                {children}
-            </ReferenceArrayInputController>,
+            <Form
+                onSubmit={jest.fn()}
+                render={() => (
+                    <ReferenceArrayInputController
+                        {...defaultProps}
+                        input={{ value: [1, 2] }}
+                    >
+                        {children}
+                    </ReferenceArrayInputController>
+                )}
+            />,
             { admin: { resources: { tags: { data: {} } } } }
         );
 
@@ -39,12 +46,17 @@ describe('<ReferenceArrayInputController />', () => {
             <div>{loading.toString()}</div>
         ));
         const { queryByText } = renderWithRedux(
-            <ReferenceArrayInputController
-                {...defaultProps}
-                input={{ value: [1, 2] }}
-            >
-                {children}
-            </ReferenceArrayInputController>,
+            <Form
+                onSubmit={jest.fn()}
+                render={() => (
+                    <ReferenceArrayInputController
+                        {...defaultProps}
+                        input={{ value: [1, 2] }}
+                    >
+                        {children}
+                    </ReferenceArrayInputController>
+                )}
+            />,
             { admin: { resources: { tags: { data: {} } } } }
         );
         expect(queryByText('true')).not.toBeNull();
@@ -55,12 +67,17 @@ describe('<ReferenceArrayInputController />', () => {
             <div>{loading.toString()}</div>
         ));
         const { queryByText } = renderWithRedux(
-            <ReferenceArrayInputController
-                {...defaultProps}
-                input={{ value: [1, 2] }}
-            >
-                {children}
-            </ReferenceArrayInputController>,
+            <Form
+                onSubmit={jest.fn()}
+                render={() => (
+                    <ReferenceArrayInputController
+                        {...defaultProps}
+                        input={{ value: [1, 2] }}
+                    >
+                        {children}
+                    </ReferenceArrayInputController>
+                )}
+            />,
             {
                 admin: {
                     resources: {
@@ -84,9 +101,14 @@ describe('<ReferenceArrayInputController />', () => {
         const children = jest.fn(({ error }) => <div>{error}</div>);
 
         const { queryByText } = renderWithRedux(
-            <ReferenceArrayInputController {...defaultProps}>
-                {children}
-            </ReferenceArrayInputController>,
+            <Form
+                onSubmit={jest.fn()}
+                render={() => (
+                    <ReferenceArrayInputController {...defaultProps}>
+                        {children}
+                    </ReferenceArrayInputController>
+                )}
+            />,
             {
                 admin: {
                     references: {
@@ -104,12 +126,17 @@ describe('<ReferenceArrayInputController />', () => {
     it('should set error in case of references fetch error and there are no data found for the references already selected', () => {
         const children = jest.fn(({ error }) => <div>{error}</div>);
         const { queryByText } = renderWithRedux(
-            <ReferenceArrayInputController
-                {...defaultProps}
-                input={{ value: [1] }}
-            >
-                {children}
-            </ReferenceArrayInputController>,
+            <Form
+                onSubmit={jest.fn()}
+                render={() => (
+                    <ReferenceArrayInputController
+                        {...defaultProps}
+                        input={{ value: [1] }}
+                    >
+                        {children}
+                    </ReferenceArrayInputController>
+                )}
+            />,
             {
                 admin: {
                     resources: { tags: { data: {} } },
@@ -127,12 +154,17 @@ describe('<ReferenceArrayInputController />', () => {
     it('should not display an error in case of references fetch error but data from at least one selected reference was found', () => {
         const children = jest.fn(({ error }) => <div>{error}</div>);
         const { queryByText } = renderWithRedux(
-            <ReferenceArrayInputController
-                {...defaultProps}
-                input={{ value: [1, 2] }}
-            >
-                {children}
-            </ReferenceArrayInputController>,
+            <Form
+                onSubmit={jest.fn()}
+                render={() => (
+                    <ReferenceArrayInputController
+                        {...defaultProps}
+                        input={{ value: [1, 2] }}
+                    >
+                        {children}
+                    </ReferenceArrayInputController>
+                )}
+            />,
             {
                 admin: {
                     resources: {
@@ -161,12 +193,17 @@ describe('<ReferenceArrayInputController />', () => {
     it('should set warning if references fetch fails but selected references are not empty', () => {
         const children = jest.fn(({ warning }) => <div>{warning}</div>);
         const { queryByText } = renderWithRedux(
-            <ReferenceArrayInputController
-                {...defaultProps}
-                input={{ value: [1, 2] }}
-            >
-                {children}
-            </ReferenceArrayInputController>,
+            <Form
+                onSubmit={jest.fn()}
+                render={() => (
+                    <ReferenceArrayInputController
+                        {...defaultProps}
+                        input={{ value: [1, 2] }}
+                    >
+                        {children}
+                    </ReferenceArrayInputController>
+                )}
+            />,
             {
                 admin: {
                     resources: {
@@ -195,12 +232,17 @@ describe('<ReferenceArrayInputController />', () => {
     it('should set warning if references were found but selected references are not complete', () => {
         const children = jest.fn(({ warning }) => <div>{warning}</div>);
         const { queryByText } = renderWithRedux(
-            <ReferenceArrayInputController
-                {...defaultProps}
-                input={{ value: [1, 2] }}
-            >
-                {children}
-            </ReferenceArrayInputController>,
+            <Form
+                onSubmit={jest.fn()}
+                render={() => (
+                    <ReferenceArrayInputController
+                        {...defaultProps}
+                        input={{ value: [1, 2] }}
+                    >
+                        {children}
+                    </ReferenceArrayInputController>
+                )}
+            />,
             {
                 admin: {
                     resources: {
@@ -229,12 +271,17 @@ describe('<ReferenceArrayInputController />', () => {
     it('should set warning if references were found but selected references are empty', () => {
         const children = jest.fn(({ warning }) => <div>{warning}</div>);
         const { queryByText } = renderWithRedux(
-            <ReferenceArrayInputController
-                {...defaultProps}
-                input={{ value: [1, 2] }}
-            >
-                {children}
-            </ReferenceArrayInputController>,
+            <Form
+                onSubmit={jest.fn()}
+                render={() => (
+                    <ReferenceArrayInputController
+                        {...defaultProps}
+                        input={{ value: [1, 2] }}
+                    >
+                        {children}
+                    </ReferenceArrayInputController>
+                )}
+            />,
             {
                 admin: {
                     resources: { tags: { data: { 5: {}, 6: {} } } },
@@ -252,12 +299,17 @@ describe('<ReferenceArrayInputController />', () => {
     it('should not set warning if all references were found', () => {
         const children = jest.fn(({ warning }) => <div>{warning}</div>);
         const { queryByText } = renderWithRedux(
-            <ReferenceArrayInputController
-                {...defaultProps}
-                input={{ value: [1, 2] }}
-            >
-                {children}
-            </ReferenceArrayInputController>,
+            <Form
+                onSubmit={jest.fn()}
+                render={() => (
+                    <ReferenceArrayInputController
+                        {...defaultProps}
+                        input={{ value: [1, 2] }}
+                    >
+                        {children}
+                    </ReferenceArrayInputController>
+                )}
+            />,
             {
                 admin: {
                     resources: {
@@ -286,13 +338,18 @@ describe('<ReferenceArrayInputController />', () => {
         expect(queryByText('ra.input.references.many_missing')).toBeNull();
     });
 
-    it('should call crudGetMatching on mount with default fetch values', () => {
+    it('should call crudGetMatching on mount with default fetch values', async () => {
         const children = jest.fn(() => <div />);
-
+        await new Promise(resolve => setTimeout(resolve, 100)); // empty the query deduplication in useQueryWithStore
         const { dispatch } = renderWithRedux(
-            <ReferenceArrayInputController {...defaultProps} allowEmpty>
-                {children}
-            </ReferenceArrayInputController>,
+            <Form
+                onSubmit={jest.fn()}
+                render={() => (
+                    <ReferenceArrayInputController {...defaultProps} allowEmpty>
+                        {children}
+                    </ReferenceArrayInputController>
+                )}
+            />,
             { admin: { resources: { tags: { data: {} } } } }
         );
         expect(dispatch.mock.calls[0][0]).toEqual({
@@ -319,14 +376,19 @@ describe('<ReferenceArrayInputController />', () => {
         const children = jest.fn(() => <div />);
 
         const { dispatch } = renderWithRedux(
-            <ReferenceArrayInputController
-                {...defaultProps}
-                sort={{ field: 'foo', order: 'ASC' }}
-                perPage={5}
-                filter={{ permanentFilter: 'foo' }}
-            >
-                {children}
-            </ReferenceArrayInputController>
+            <Form
+                onSubmit={jest.fn()}
+                render={() => (
+                    <ReferenceArrayInputController
+                        {...defaultProps}
+                        sort={{ field: 'foo', order: 'ASC' }}
+                        perPage={5}
+                        filter={{ permanentFilter: 'foo' }}
+                    >
+                        {children}
+                    </ReferenceArrayInputController>
+                )}
+            />
         );
         expect(dispatch.mock.calls[0][0]).toEqual({
             type: CRUD_GET_MATCHING,
@@ -354,14 +416,19 @@ describe('<ReferenceArrayInputController />', () => {
         ));
 
         const { dispatch, getByLabelText } = renderWithRedux(
-            <ReferenceArrayInputController {...defaultProps}>
-                {children}
-            </ReferenceArrayInputController>
+            <Form
+                onSubmit={jest.fn()}
+                render={() => (
+                    <ReferenceArrayInputController {...defaultProps}>
+                        {children}
+                    </ReferenceArrayInputController>
+                )}
+            />
         );
 
         fireEvent.click(getByLabelText('Filter'));
 
-        await wait(() => {
+        await waitFor(() => {
             expect(dispatch).toHaveBeenCalledWith({
                 type: CRUD_GET_MATCHING,
                 meta: {
@@ -389,17 +456,22 @@ describe('<ReferenceArrayInputController />', () => {
         ));
 
         const { dispatch, getByLabelText } = renderWithRedux(
-            <ReferenceArrayInputController
-                {...defaultProps}
-                filterToQuery={searchText => ({ foo: searchText })}
-            >
-                {children}
-            </ReferenceArrayInputController>
+            <Form
+                onSubmit={jest.fn()}
+                render={() => (
+                    <ReferenceArrayInputController
+                        {...defaultProps}
+                        filterToQuery={searchText => ({ foo: searchText })}
+                    >
+                        {children}
+                    </ReferenceArrayInputController>
+                )}
+            />
         );
 
         fireEvent.click(getByLabelText('Filter'));
 
-        await wait(() => {
+        await waitFor(() => {
             expect(dispatch).toHaveBeenCalledWith({
                 type: CRUD_GET_MATCHING,
                 meta: {
@@ -425,15 +497,20 @@ describe('<ReferenceArrayInputController />', () => {
         const children = jest.fn(() => <div />);
 
         const { dispatch } = renderWithRedux(
-            <ReferenceArrayInputController
-                {...defaultProps}
-                input={{ value: [5, 6] }}
-            >
-                {children}
-            </ReferenceArrayInputController>,
+            <Form
+                onSubmit={jest.fn()}
+                render={() => (
+                    <ReferenceArrayInputController
+                        {...defaultProps}
+                        input={{ value: [5, 6] }}
+                    >
+                        {children}
+                    </ReferenceArrayInputController>
+                )}
+            />,
             { admin: { resources: { tags: { data: { 5: {}, 6: {} } } } } }
         );
-        await wait(() => {
+        await waitFor(() => {
             expect(dispatch).toHaveBeenCalledWith({
                 type: CRUD_GET_MANY,
                 meta: {
@@ -450,18 +527,23 @@ describe('<ReferenceArrayInputController />', () => {
         ));
 
         const { dispatch, getByLabelText } = renderWithRedux(
-            <ReferenceArrayInputController
-                {...defaultProps}
-                input={{ value: [5] }}
-            >
-                {children}
-            </ReferenceArrayInputController>,
+            <Form
+                onSubmit={jest.fn()}
+                render={() => (
+                    <ReferenceArrayInputController
+                        {...defaultProps}
+                        input={{ value: [5] }}
+                    >
+                        {children}
+                    </ReferenceArrayInputController>
+                )}
+            />,
             { admin: { resources: { tags: { data: { 5: {} } } } } }
         );
 
         fireEvent.click(getByLabelText('Filter'));
 
-        await wait(() => {
+        await waitFor(() => {
             expect(
                 dispatch.mock.calls.filter(
                     call => call[0].type === CRUD_GET_MATCHING
@@ -479,26 +561,36 @@ describe('<ReferenceArrayInputController />', () => {
         const children = jest.fn(() => <div />);
 
         const { dispatch, rerender } = renderWithRedux(
-            <ReferenceArrayInputController
-                {...defaultProps}
-                input={{ value: [5] }}
-            >
-                {children}
-            </ReferenceArrayInputController>,
+            <Form
+                onSubmit={jest.fn()}
+                render={() => (
+                    <ReferenceArrayInputController
+                        {...defaultProps}
+                        input={{ value: [5] }}
+                    >
+                        {children}
+                    </ReferenceArrayInputController>
+                )}
+            />,
             { admin: { resources: { tags: { data: { 5: {} } } } } }
         );
 
         rerender(
-            <ReferenceArrayInputController
-                {...defaultProps}
-                input={{ value: [5] }}
-                filter={{ permanentFilter: 'bar' }}
-            >
-                {children}
-            </ReferenceArrayInputController>
+            <Form
+                onSubmit={jest.fn()}
+                render={() => (
+                    <ReferenceArrayInputController
+                        {...defaultProps}
+                        input={{ value: [5] }}
+                        filter={{ permanentFilter: 'bar' }}
+                    >
+                        {children}
+                    </ReferenceArrayInputController>
+                )}
+            />
         );
 
-        await wait(() => {
+        await waitFor(() => {
             expect(
                 dispatch.mock.calls.filter(
                     call => call[0].type === CRUD_GET_MATCHING
@@ -512,17 +604,22 @@ describe('<ReferenceArrayInputController />', () => {
         });
 
         rerender(
-            <ReferenceArrayInputController
-                {...defaultProps}
-                input={{ value: [5] }}
-                filter={{ permanentFilter: 'bar' }}
-                sort={{ field: 'foo', order: 'ASC' }}
-            >
-                {children}
-            </ReferenceArrayInputController>
+            <Form
+                onSubmit={jest.fn()}
+                render={() => (
+                    <ReferenceArrayInputController
+                        {...defaultProps}
+                        input={{ value: [5] }}
+                        filter={{ permanentFilter: 'bar' }}
+                        sort={{ field: 'foo', order: 'ASC' }}
+                    >
+                        {children}
+                    </ReferenceArrayInputController>
+                )}
+            />
         );
 
-        await wait(() => {
+        await waitFor(() => {
             expect(
                 dispatch.mock.calls.filter(
                     call => call[0].type === CRUD_GET_MATCHING
@@ -536,18 +633,23 @@ describe('<ReferenceArrayInputController />', () => {
         });
 
         rerender(
-            <ReferenceArrayInputController
-                {...defaultProps}
-                input={{ value: [5] }}
-                filter={{ permanentFilter: 'bar' }}
-                sort={{ field: 'foo', order: 'ASC' }}
-                perPage={42}
-            >
-                {children}
-            </ReferenceArrayInputController>
+            <Form
+                onSubmit={jest.fn()}
+                render={() => (
+                    <ReferenceArrayInputController
+                        {...defaultProps}
+                        input={{ value: [5] }}
+                        filter={{ permanentFilter: 'bar' }}
+                        sort={{ field: 'foo', order: 'ASC' }}
+                        perPage={42}
+                    >
+                        {children}
+                    </ReferenceArrayInputController>
+                )}
+            />
         );
 
-        await wait(() => {
+        await waitFor(() => {
             expect(
                 dispatch.mock.calls.filter(
                     call => call[0].type === CRUD_GET_MATCHING
@@ -565,12 +667,17 @@ describe('<ReferenceArrayInputController />', () => {
         const children = jest.fn(() => <div />);
 
         const { dispatch, rerender } = renderWithRedux(
-            <ReferenceArrayInputController
-                {...defaultProps}
-                input={{ value: [5] }}
-            >
-                {children}
-            </ReferenceArrayInputController>,
+            <Form
+                onSubmit={jest.fn()}
+                render={() => (
+                    <ReferenceArrayInputController
+                        {...defaultProps}
+                        input={{ value: [5] }}
+                    >
+                        {children}
+                    </ReferenceArrayInputController>
+                )}
+            />,
             {
                 admin: {
                     resources: {
@@ -585,31 +692,37 @@ describe('<ReferenceArrayInputController />', () => {
             }
         );
 
-        await wait();
-        expect(dispatch).toHaveBeenCalledWith({
-            type: CRUD_GET_MANY,
-            meta: {
-                resource: 'tags',
-            },
-            payload: { ids: [5] },
+        await waitFor(() => {
+            expect(dispatch).toHaveBeenCalledWith({
+                type: CRUD_GET_MANY,
+                meta: {
+                    resource: 'tags',
+                },
+                payload: { ids: [5] },
+            });
         });
         rerender(
-            <ReferenceArrayInputController
-                {...defaultProps}
-                input={{ value: [5, 6] }}
-            >
-                {children}
-            </ReferenceArrayInputController>
+            <Form
+                onSubmit={jest.fn()}
+                render={() => (
+                    <ReferenceArrayInputController
+                        {...defaultProps}
+                        input={{ value: [5, 6] }}
+                    >
+                        {children}
+                    </ReferenceArrayInputController>
+                )}
+            />
         );
 
-        await wait();
-
-        expect(dispatch).toHaveBeenCalledWith({
-            type: CRUD_GET_MANY,
-            meta: {
-                resource: 'tags',
-            },
-            payload: { ids: [6] },
+        await waitFor(() => {
+            expect(dispatch).toHaveBeenCalledWith({
+                type: CRUD_GET_MANY,
+                meta: {
+                    resource: 'tags',
+                },
+                payload: { ids: [6] },
+            });
         });
     });
 
@@ -617,35 +730,179 @@ describe('<ReferenceArrayInputController />', () => {
         const children = jest.fn(() => <div />);
 
         const { dispatch, rerender } = renderWithRedux(
-            <ReferenceArrayInputController
-                {...defaultProps}
-                input={{ value: [5, 6] }}
-            >
-                {children}
-            </ReferenceArrayInputController>,
+            <Form
+                onSubmit={jest.fn()}
+                render={() => (
+                    <ReferenceArrayInputController
+                        {...defaultProps}
+                        input={{ value: [5, 6] }}
+                    >
+                        {children}
+                    </ReferenceArrayInputController>
+                )}
+            />,
             { admin: { resources: { tags: { data: { 5: {}, 6: {} } } } } }
         );
-        await wait();
-        expect(dispatch).toHaveBeenCalledWith({
-            type: CRUD_GET_MANY,
-            meta: {
-                resource: 'tags',
-            },
-            payload: { ids: [5, 6] },
+        await waitFor(() => {
+            expect(dispatch).toHaveBeenCalledWith({
+                type: CRUD_GET_MANY,
+                meta: {
+                    resource: 'tags',
+                },
+                payload: { ids: [5, 6] },
+            });
         });
         rerender(
-            <ReferenceArrayInputController
-                {...defaultProps}
-                input={{ value: [5, 6] }}
-            >
-                {children}
-            </ReferenceArrayInputController>
+            <Form
+                onSubmit={jest.fn()}
+                render={() => (
+                    <ReferenceArrayInputController
+                        {...defaultProps}
+                        input={{ value: [5, 6] }}
+                    >
+                        {children}
+                    </ReferenceArrayInputController>
+                )}
+            />
         );
 
-        await wait();
-        expect(
-            dispatch.mock.calls.filter(call => call[0].type === CRUD_GET_MANY)
-                .length
-        ).toEqual(1);
+        await waitFor(() => {
+            expect(
+                dispatch.mock.calls.filter(
+                    call => call[0].type === CRUD_GET_MANY
+                ).length
+            ).toEqual(1);
+        });
+    });
+
+    it('should props compatible with the ListContext', async () => {
+        const children = ({
+            setPage,
+            setPerPage,
+            setSortForList,
+        }: ReferenceArrayInputControllerChildrenFuncParams): React.ReactElement => {
+            const handleSetPage = () => {
+                setPage(2);
+            };
+            const handleSetPerPage = () => {
+                setPerPage(50);
+            };
+            const handleSetSort = () => {
+                setSortForList('name', SORT_ASC);
+            };
+
+            return (
+                <>
+                    <button aria-label="setPage" onClick={handleSetPage} />
+                    <button
+                        aria-label="setPerPage"
+                        onClick={handleSetPerPage}
+                    />
+                    <button aria-label="setSort" onClick={handleSetSort} />
+                </>
+            );
+        };
+
+        const { getByLabelText, dispatch } = renderWithRedux(
+            <Form
+                onSubmit={jest.fn()}
+                render={() => (
+                    <ReferenceArrayInputController
+                        {...defaultProps}
+                        input={{ value: [5, 6] }}
+                    >
+                        {children}
+                    </ReferenceArrayInputController>
+                )}
+            />,
+            { admin: { resources: { tags: { data: { 5: {}, 6: {} } } } } }
+        );
+
+        fireEvent.click(getByLabelText('setPage'));
+        await waitFor(() => {
+            expect(dispatch).toHaveBeenCalledWith({
+                type: CRUD_GET_MATCHING,
+                meta: {
+                    relatedTo: 'posts@tag_ids',
+                    resource: 'tags',
+                },
+                payload: {
+                    pagination: {
+                        page: 2,
+                        perPage: 25,
+                    },
+                    sort: {
+                        field: 'id',
+                        order: 'DESC',
+                    },
+                    filter: { q: '' },
+                },
+            });
+        });
+
+        fireEvent.click(getByLabelText('setPerPage'));
+        await waitFor(() => {
+            expect(dispatch).toHaveBeenCalledWith({
+                type: CRUD_GET_MATCHING,
+                meta: {
+                    relatedTo: 'posts@tag_ids',
+                    resource: 'tags',
+                },
+                payload: {
+                    pagination: {
+                        page: 2,
+                        perPage: 50,
+                    },
+                    sort: {
+                        field: 'id',
+                        order: 'DESC',
+                    },
+                    filter: { q: '' },
+                },
+            });
+        });
+
+        fireEvent.click(getByLabelText('setSort'));
+        await waitFor(() => {
+            expect(dispatch).toHaveBeenCalledWith({
+                type: CRUD_GET_MATCHING,
+                meta: {
+                    relatedTo: 'posts@tag_ids',
+                    resource: 'tags',
+                },
+                payload: {
+                    pagination: {
+                        page: 1,
+                        perPage: 50,
+                    },
+                    sort: {
+                        field: 'name',
+                        order: 'ASC',
+                    },
+                    filter: { q: '' },
+                },
+            });
+        });
+    });
+
+    it('should call its children with the correct resource and basePath', () => {
+        const children = jest.fn(() => null);
+        renderWithRedux(
+            <Form
+                onSubmit={jest.fn()}
+                render={() => (
+                    <ReferenceArrayInputController
+                        {...defaultProps}
+                        input={{ value: [1, 2] }}
+                    >
+                        {children}
+                    </ReferenceArrayInputController>
+                )}
+            />,
+            { admin: { resources: { tags: { data: {} } } } }
+        );
+
+        expect(children.mock.calls[0][0].resource).toEqual('posts');
+        expect(children.mock.calls[0][0].basePath).toEqual('/posts');
     });
 });

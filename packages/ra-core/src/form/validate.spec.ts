@@ -14,45 +14,99 @@ import {
 } from './validate';
 
 describe('Validators', () => {
-    const test = (validator, inputs, message) =>
-        expect(
-            inputs
-                .map(input => validator(input, null))
-                .map(error => (error && error.message ? error.message : error))
-        ).toEqual(Array(...Array(inputs.length)).map(() => message));
+    const test = async (validator, inputs, message) => {
+        const validationResults = await Promise.all<Error | undefined>(
+            inputs.map(input => validator(input, null))
+        ).then(results =>
+            results.map(error =>
+                error && error.message ? error.message : error
+            )
+        );
+
+        expect(validationResults).toEqual(
+            Array(...Array(inputs.length)).map(() => message)
+        );
+    };
 
     describe('composeValidators', () => {
-        it('Correctly composes validators passed as an array', () => {
-            test(
-                composeValidators([required(), minLength(5)]),
+        const asyncSuccessfullValidator = async =>
+            new Promise(resolve => resolve(undefined));
+        const asyncFailedValidator = async =>
+            new Promise(resolve => resolve('async'));
+
+        it('Correctly composes validators passed as an array', async () => {
+            await test(
+                composeValidators([
+                    required(),
+                    minLength(5),
+                    asyncSuccessfullValidator,
+                ]),
                 [''],
                 'ra.validation.required'
             );
-            test(
-                composeValidators([required(), minLength(5)]),
+            await test(
+                composeValidators([
+                    required(),
+                    asyncSuccessfullValidator,
+                    minLength(5),
+                ]),
                 ['abcd'],
                 'ra.validation.minLength'
             );
-            test(
-                composeValidators([required(), minLength(5)]),
+            await test(
+                composeValidators([
+                    required(),
+                    asyncFailedValidator,
+                    minLength(5),
+                ]),
+                ['abcde'],
+                'async'
+            );
+            await test(
+                composeValidators([
+                    required(),
+                    minLength(5),
+                    asyncSuccessfullValidator,
+                ]),
                 ['abcde'],
                 undefined
             );
         });
 
-        it('Correctly composes validators passed as many arguments', () => {
-            test(
-                composeValidators(required(), minLength(5)),
+        it('Correctly composes validators passed as many arguments', async () => {
+            await test(
+                composeValidators(
+                    required(),
+                    minLength(5),
+                    asyncSuccessfullValidator
+                ),
                 [''],
                 'ra.validation.required'
             );
-            test(
-                composeValidators(required(), minLength(5)),
+            await test(
+                composeValidators(
+                    required(),
+                    asyncSuccessfullValidator,
+                    minLength(5)
+                ),
                 ['abcd'],
                 'ra.validation.minLength'
             );
-            test(
-                composeValidators(required(), minLength(5)),
+            await test(
+                composeValidators(
+                    required(),
+                    asyncFailedValidator,
+                    minLength(5)
+                ),
+                ['abcde'],
+                'async'
+            );
+            await test(
+                composeValidators(
+                    required(),
+                    minLength(5),
+                    asyncSuccessfullValidator
+                ),
                 ['abcde'],
                 undefined
             );
@@ -239,13 +293,13 @@ describe('Validators', () => {
             );
         });
 
-        it('should memoize the validator when the regex pattren and message are the same', () => {
+        it('should memoize the validator when the regex pattern and message are the same', () => {
             expect(regex(/foo/, 'placeholder')).toBe(
                 regex(/foo/, 'placeholder')
             );
         });
 
-        it('should create new validator when the regex pattren is different', () => {
+        it('should create new validator when the regex pattern is different', () => {
             expect(regex(/foo/, 'placeholder')).not.toBe(
                 regex(/notfoo/, 'placeholder')
             );

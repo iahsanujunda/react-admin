@@ -1,15 +1,12 @@
 import * as React from 'react';
 import expect from 'expect';
-import { cleanup } from '@testing-library/react';
 
 import useTranslate from './useTranslate';
 import TranslationProvider from './TranslationProvider';
 import { TranslationContext } from './TranslationContext';
-import { renderWithRedux } from '../util';
+import { renderWithRedux } from 'ra-test';
 
 describe('useTranslate', () => {
-    afterEach(cleanup);
-
     const Component = () => {
         const translate = useTranslate();
         return <div>{translate('hello')}</div>;

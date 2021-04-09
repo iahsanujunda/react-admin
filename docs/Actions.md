@@ -5,7 +5,7 @@ title: "Querying the API"
 
 # Querying the API
 
-Admin interfaces often have to query the API beyond CRUD requests. For instance, a user profile page may need to get the User object based on a user id. Or, users may want to an "Approve" a comment by pressing a button, and this action should update the `is_approved` property and save the updated record in one click.
+Admin interfaces often have to query the API beyond CRUD requests. For instance, a user profile page may need to get the User object based on a user id. Or, users may want to "Approve" a comment by pressing a button, and this action should update the `is_approved` property and save the updated record in one click.
 
 React-admin provides special hooks to emit read and write queries to the [`dataProvider`](./DataProviders.md), which in turn sends requests to your API.
 
@@ -50,7 +50,45 @@ const UserProfile = ({ userId }) => {
 };
 ```
 
-**Tip**: The `dataProvider` returned by the hook is actually a *wrapper* around your Data Provider. This wrapper dispatches Redux actions on load, success and failure, which keeps track of the loading state.
+**Tip**: The `dataProvider` returned by the hook is actually a *wrapper* around your Data Provider. This wrapper updates the Redux store on success, and keeps track of the loading state. In case you don't want to update the Redux store (e.g. when implementing an autosave feature), you should access the raw, non-wrapped Data Provider from the `DataProviderContext`:
+
+```diff
+import * as React from 'react';
+-import { useState, useEffect } from 'react';
++import { useState, useEffect, useContext } from 'react';
+-import { useDataProvider, Loading, Error } from 'react-admin';
++import { DataProviderContext, Loading, Error } from 'react-admin';
+
+const UserProfile = ({ userId }) => {
+-   const dataProvider = useDataProvider();
++   const dataProvider = useContext(DataProviderContext);
+    const [user, setUser] = useState();
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState();
+    useEffect(() => {
+        dataProvider.getOne('users', { id: userId })
+            .then(({ data }) => {
+                setUser(data);
+                setLoading(false);
+            })
+            .catch(error => {
+                setError(error);
+                setLoading(false);
+            })
+    }, []);
+
+    if (loading) return <Loading />;
+    if (error) return <Error />;
+    if (!user) return null;
+
+    return (
+        <ul>
+            <li>Name: {user.name}</li>
+            <li>Email: {user.email}</li>
+        </ul>
+    )
+};
+```
 
 ## `useQuery` Hook
 
@@ -113,7 +151,7 @@ As a reminder, here are the read query types handled by Data Providers:
 
 ## `useQueryWithStore` Hook
 
-React-admin exposes a more powerful version of `useQuery`. `useQueryWithStore` persist the response from the `dataProvider` in the internal react-admin Redux store, so that result remains available if the hook is called again in the future.  
+React-admin exposes a more powerful version of `useQuery`. `useQueryWithStore` persist the response from the `dataProvider` in the internal react-admin Redux store, so that result remains available if the hook is called again in the future.
 
 You can use this hook to show the cached result immediately on mount, while the updated result is fetched from the API. This is called optimistic rendering.
 
@@ -235,20 +273,198 @@ const ApproveButton = ({ record }) => {
 };
 ```
 
-The specialized hooks based on `useQuery` execute on mount:
+The specialized hooks based on `useQuery` (`useGetList`, `useGetOne`, `useGetMany`, `useGetManyReference`) execute on mount. The specialized hooks based on `useMutation` (`useCreate`, `useUpdate`, `useUpdateMany`, `useDelete`, `useDeleteMany`) return a callback.
 
-* `useGetList(resource, pagination, sort, filters)`
-* `useGetOne(resource, id)`
-* `useGetMany(resource, ids)`
-* `useGetManyReference(resource, target, id, pagination, sort, filter, referencingResource)`
+### `useGetList`
 
-The specialized hooks based on `useMutation` return a callback:
+```jsx
+// syntax
+const { data, ids, total, loading, loaded, error } = useGetList(resource, pagination, sort, filter, options);
 
-* `useCreate(resource, data)`
-* `useUpdate(resource, id, data, previousData)`
-* `useUpdateMany(resource, ids, data)`
-* `useDelete(resource, id)`
-* `useDeleteMany(resource, ids)`
+// example
+import { useGetList } from 'react-admin';
+const LatestNews = () => {
+    const { data, ids, loading, error } = useGetList(
+        'posts',
+        { page: 1, perPage: 10 },
+        { field: 'published_at', order: 'DESC' }
+    );
+    if (loading) { return <Loading />; }
+    if (error) { return <p>ERROR</p>; }
+    return (
+        <ul>
+            {ids.map(id =>
+                <li key={id}>{data[id].title}</li>
+            )}
+        </ul>
+    );
+};
+```
+
+### `useGetOne`
+
+```jsx
+// syntax
+const { data, loading, loaded, error } = useGetOne(resource, id, options);
+
+// example
+import { useGetOne } from 'react-admin';
+const UserProfile = ({ record }) => {
+    const { data, loading, error } = useGetOne('users', record.id);
+    if (loading) { return <Loading />; }
+    if (error) { return <p>ERROR</p>; }
+    return <div>User {data.username}</div>;
+};
+```
+
+### `useGetMany`
+
+```jsx
+// syntax
+const { data, loading, loaded, error } = useGetMany(resource, ids, options);
+
+// example
+import { useGetMany } from 'react-admin';
+const PostTags = ({ record }) => {
+    const { data, loading, error } = useGetMany('tags', record.tagIds);
+    if (loading) { return <Loading />; }
+    if (error) { return <p>ERROR</p>; }
+    return (
+         <ul>
+             {data.map(tag => (
+                 <li key={tag.id}>{tag.name}</li>
+             ))}
+         </ul>
+     );
+};
+```
+
+### `useGetManyReference`
+
+```jsx
+// syntax
+const { data, ids, total, loading, loaded, error } = useGetManyReference(resource, target, id, pagination, sort, filter, referencingResource, options);
+
+// example
+import { useGetManyReference } from 'react-admin';
+const PostComments = ({ post_id }) => {
+    const { data, ids, loading, error } = useGetManyReference(
+        'comments',
+        'post_id',
+        post_id,
+        { page: 1, perPage: 10 },
+        { field: 'published_at', order: 'DESC' },
+        {},
+        'posts',
+    );
+    if (loading) { return <Loading />; }
+    if (error) { return <p>ERROR</p>; }
+    return (
+        <ul>
+            {ids.map(id =>
+                <li key={id}>{data[id].body}</li>
+            )}
+        </ul>
+    );
+};
+```
+
+### `useCreate`
+
+```jsx
+// syntax
+const [create, { data, loading, loaded, error }] = useCreate(resource, data, options);
+
+// example
+import { useCreate } from 'react-admin';
+const LikeButton = ({ record }) => {
+    const like = { postId: record.id };
+    const [create, { loading, error }] = useCreate('likes', like);
+    if (error) { return <p>ERROR</p>; }
+    return <button disabled={loading} onClick={create}>Like</button>;
+};
+```
+
+### `useUpdate`
+
+```jsx
+// syntax
+const [update, { data, loading, loaded, error }] = useUpdate(resource, id, data, previousData, options);
+
+// example
+import { useUpdate } from 'react-admin';
+const IncreaseLikeButton = ({ record }) => {
+    const diff = { likes: record.likes + 1 };
+    const [update, { loading, error }] = useUpdate('likes', record.id, diff, record);
+    if (error) { return <p>ERROR</p>; }
+    return <button disabled={loading} onClick={update}>Like</button>;
+};
+```
+
+### `useUpdateMany`
+
+```jsx
+// syntax
+const [updateMany, { data, loading, loaded, error }] = useUpdateMany(resource, ids, data, options);
+
+// example
+import { useUpdateMany } from 'react-admin';
+const BulkResetViewsButton = ({ selectedIds }) => {
+    const [updateMany, { loading, error }] = useUpdateMany('posts', selectedIds, { views: 0 });
+    if (error) { return <p>ERROR</p>; }
+    return <button disabled={loading} onClick={updateMany}>Reset views</button>;
+};
+```
+
+### `useDelete`
+
+```jsx
+// syntax
+const [deleteOne, { data, loading, loaded, error }] = useDelete(resource, id, previousData, options);
+
+// example
+import { useDelete } from 'react-admin';
+const DeleteButton = ({ record }) => {
+    const [deleteOne, { loading, error }] = useDelete('likes', record.id);
+    if (error) { return <p>ERROR</p>; }
+    return <button disabled={loading} onClick={deleteOne}>Delete</button>;
+};
+```
+
+### `useDeleteMany`
+
+```jsx
+// syntax
+const [deleteOne, { data, loading, loaded, error }] = useDeleteMany(resource, ids, options);
+
+// example
+import { useDeleteMany } from 'react-admin';
+const BulkDeletePostsButton = ({ selectedIds }) => {
+    const [deleteMany, { loading, error }] = useDeleteMany('posts', selectedIds);
+    if (error) { return <p>ERROR</p>; }
+    return <button disabled={loading} onClick={deleteMany}>Delete selected posts</button>;
+};
+```
+
+## Synchronizing Dependant Queries
+`useQuery` and all its corresponding specialized hooks support an `enabled` option. This is useful if you need to have a query executed only when a condition is met. For example, in the following example, we only fetch the categories if we have at least one post:
+```jsx
+// fetch posts
+const { ids, data: posts, loading: isLoading } = useGetList(
+    'posts',
+    { page: 1, perPage: 20 },
+    { field: 'name', order: 'ASC' },
+    {}
+);
+
+// then fetch categories for these posts
+const { data: categories, loading: isLoadingCategories } = useGetMany(
+    'categories',
+    ids.map(id=> posts[id].category_id),
+    // run only if the first query returns non-empty result
+    { enabled: ids.length > 0 }
+);
+```
 
 ## Handling Side Effects In `useDataProvider`
 
@@ -289,9 +505,9 @@ Fetching data is called a *side effect*, since it calls the outside world, and i
 
 ## Handling Side Effects In Other Hooks
 
-But the other hooks presented in this chapter, starting with `useMutation`, don't expose the `dataProvider` Promise. To allow for side effects with these hooks, they all accept an additional `options` argument. It's an object with `onSuccess` and `onFailure` functions, that react-admin executes on success... or on failure.
+The other hooks presented in this chapter, starting with `useQuery`, don't expose the `dataProvider` Promise. To allow for side effects with these hooks, they all accept an additional `options` argument. It's an object with `onSuccess` and `onFailure` functions, that react-admin executes on success... or on failure.
 
-So the `<ApproveButton>` written with `useMutation` instead of `useDataProvider` can specify side effects as follows:
+So an `<ApproveButton>` written with `useMutation` instead of `useDataProvider` can specify side effects as follows:
 
 ```jsx
 import * as React from "react";
@@ -320,13 +536,27 @@ const ApproveButton = ({ record }) => {
 
 ## Optimistic Rendering and Undo
 
-In the previous example, after clicking on the "Approve" button, a loading spinner appears while the data provider is fetched. Then, users are redirected to the comments list. But in most cases, the server returns a success response, so the user waits for this response for nothing.
+In the previous example, after clicking on the "Approve" button, a loading spinner appears while the data provider is fetched. Then, users are redirected to the comments list. But in most cases, the server returns a success response, so the user waits for this response for nothing. 
 
-For its own fetch actions, react-admin uses an approach called *optimistic rendering*. The idea is to handle the calls to the `dataProvider` on the client side first (i.e. updating entities in the Redux store), and re-render the screen immediately. The user sees the effect of their action with no delay. Then, react-admin applies the success side effects, and only after that, it triggers the call to the data provider. If the fetch ends with a success, react-admin does nothing more than a refresh to grab the latest data from the server. In most cases, the user sees no difference (the data in the Redux store and the data from the data provider are the same). If the fetch fails, react-admin shows an error notification, and forces a refresh, too.
+This is called **pessimistic rendering**, as all users are forced to wait because of the (usually rare) possibility of server failure. 
 
-As a bonus, while the success notification is displayed, users have the ability to cancel the action *before* the data provider is even called.
+An alternative mode for mutations is **optimistic rendering**. The idea is to handle the calls to the `dataProvider` on the client side first (i.e. updating entities in the Redux store), and re-render the screen immediately. The user sees the effect of their action with no delay. Then, react-admin applies the success side effects, and only after that, it triggers the call to the data provider. If the fetch ends with a success, react-admin does nothing more than a refresh to grab the latest data from the server. In most cases, the user sees no difference (the data in the Redux store and the data from the `dataProvider` are the same). If the fetch fails, react-admin shows an error notification, and forces a refresh, too.
 
-You can benefit from optimistic rendering when you call the `useMutation` hook, too. You just need to pass `undoable: true` in the `options` parameter:
+A third mutation mode is called **undoable**. It's like optimistic rendering, but with an added feature: after applying the changes and the side effects locally, react-admin *waits* for a few seconds before triggering the call to the `dataProvider`. During this delay, the end user sees an "undo" button that, when clicked, cancels the call to the `dataProvider` and refreshes the screen.
+
+Here is a quick recap of the three mutation modes:
+
+|                   | pessimistic               | optimistic | undoable  |
+|-------------------|---------------------------|------------|-----------|
+| dataProvider call | immediate                 | immediate  | delayed   |
+| local changes     | when dataProvider returns | immediate  | immediate |
+| side effects      | when dataProvider returns | immediate  | immediate |
+| cancellable       | no                        | no         | yes       |
+
+
+By default, react-admin uses the undoable mode for the Edit view. For the Create view, react-admin needs to wait for the response to know the id of the resource to redirect to, so the mutation mode is pessimistic.  
+
+You can benefit from optimistic and undoable modes when you call the `useMutation` hook, too. You just need to pass a `mutationMode` value in the `options` parameter:
 
 ```diff
 import * as React from "react";
@@ -342,8 +572,9 @@ const ApproveButton = ({ record }) => {
             payload: { id: record.id, data: { isApproved: true } },
         },
         {
-+           undoable: true,
-            onSuccess: ({ data }) => {
++           mutationMode: 'undoable',
+-           onSuccess: ({ data }) => {
++           onSuccess: () => {
                 redirect('/comments');
 -               notify('Comment approved');
 +               notify('Comment approved', 'info', {}, true);
@@ -355,9 +586,9 @@ const ApproveButton = ({ record }) => {
 };
 ```
 
-As you can see in this example, you need to tweak the notification for undoable actions: passing `true` as fourth parameter of `notify` displays the 'Undo' button in the notification.
+As you can see in this example, you need to tweak the notification for undoable calls: passing `true` as fourth parameter of `notify` displays the 'Undo' button in the notification. Also, as side effects are executed immediately, they can't rely on the response being passed to onSuccess.
 
-You can pass the `{ undoable: true }` options parameter to specialized hooks, too. they all accept an optional last argument with side effects.
+You can pass the `mutationMode` option parameter to specialized hooks, too. They all accept an optional last argument with side effects.
 
 ```jsx
 import * as React from "react";
@@ -370,9 +601,10 @@ const ApproveButton = ({ record }) => {
         'comments',
         record.id,
         { isApproved: true },
+        record,
         {
-            undoable: true,
-            onSuccess: ({ data }) => {
+            mutationMode: 'undoable',
+            onSuccess: () => {
                 redirect('/comments');
                 notify('Comment approved', 'info', {}, true);
             },
@@ -406,7 +638,7 @@ const ApproveButton = ({ record }) => {
         { isApproved: true },
         {
 +           action: 'MY_CUSTOM_ACTION',
-            undoable: true,
+            mutationMode: 'undoable',
             onSuccess: ({ data }) => {
                 redirect('/comments');
                 notify('Comment approved', 'info', {}, true);
@@ -489,7 +721,7 @@ const ApproveButton = ({ record }) => {
     const redirect = useRedirect();
     const payload = { id: record.id, data: { ...record, is_approved: true } };
     const options = {
-        undoable: true,
+        mutationMode: 'undoable',
         onSuccess: ({ data }) => {
             notify('Comment approved', 'info', {}, true);
             redirect('/comments');

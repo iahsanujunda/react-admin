@@ -1,4 +1,4 @@
-import useMutation from './useMutation';
+import useMutation, { MutationOptions } from './useMutation';
 
 /**
  * Get a callback to call the dataProvider.create() method, the result and the loading state.
@@ -10,8 +10,8 @@ import useMutation from './useMutation';
  * - error: [callback, { error: [error from response], loading: false, loaded: true }]
  *
  * @param resource The resource name, e.g. 'posts'
- * @param data The data to initialize the new record with, e.g. { title: 'hello, world" }
- * @param options Options object to pass to the dataProvider. May include side effects to be executed upon success of failure, e.g. { onSuccess: { refresh: true } }
+ * @param data The data to initialize the new record with, e.g. { title: 'hello, world' }
+ * @param options Options object to pass to the dataProvider. May include side effects to be executed upon success or failure, e.g. { onSuccess: { refresh: true } }
  *
  * @returns The current request state. Destructure as [create, { data, error, loading, loaded }].
  *
@@ -26,7 +26,10 @@ import useMutation from './useMutation';
  *     return <button disabled={loading} onClick={create}>Like</button>;
  * };
  */
-const useCreate = (resource: string, data: any = {}, options?: any) =>
-    useMutation({ type: 'create', resource, payload: { data } }, options);
+const useCreate = (
+    resource: string,
+    data: any = {},
+    options?: MutationOptions
+) => useMutation({ type: 'create', resource, payload: { data } }, options);
 
 export default useCreate;

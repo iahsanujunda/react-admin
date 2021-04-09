@@ -6,7 +6,7 @@ import useDataProvider from './useDataProvider';
 import useVersion from '../controller/useVersion';
 import getFetchType from './getFetchType';
 import { useSafeSetState } from '../util/hooks';
-import { ReduxState } from '../types';
+import { ReduxState, OnSuccess, OnFailure } from '../types';
 
 export interface Query {
     type: string;
@@ -23,30 +23,26 @@ export interface StateResult {
 }
 
 export interface QueryOptions {
-    onSuccess?: (args?: any) => void;
-    onFailure?: (error: any) => void;
+    onSuccess?: OnSuccess;
+    onFailure?: OnFailure;
     action?: string;
+    enabled?: boolean;
     [key: string]: any;
 }
 
-/**
- * Lists of records are initialized to a particular object,
- * so detecting if the list is empty requires some work.
- *
- * @see src/reducer/admin/data.ts
- */
-const isEmptyList = data =>
-    Array.isArray(data)
-        ? data.length === 0
-        : data &&
-          Object.keys(data).length === 0 &&
-          data.hasOwnProperty('fetchedAt');
+export type PartialQueryState = {
+    error?: any;
+    loading: boolean;
+    loaded: boolean;
+};
+
+const queriesThisTick: { [key: string]: Promise<PartialQueryState> } = {};
 
 /**
  * Default cache selector. Allows to cache responses by default.
  *
  * By default, custom queries are dispatched as a CUSTOM_QUERY Redux action.
- * The useDataProvider hookdispatches a CUSTOM_QUERY_SUCCESS when the response
+ * The useDataProvider hook dispatches a CUSTOM_QUERY_SUCCESS when the response
  * comes, and the customQueries reducer stores the result in the store.
  * This selector reads the customQueries store and acts as a response cache.
  */
@@ -63,6 +59,8 @@ const defaultTotalSelector = query => (state: ReduxState) => {
         ? state.admin.customQueries[key].total
         : null;
 };
+
+const defaultIsDataLoaded = (data: any): boolean => data !== undefined;
 
 /**
  * Fetch the data provider through Redux, return the value from the store.
@@ -82,10 +80,12 @@ const defaultTotalSelector = query => (state: ReduxState) => {
  * @param {Object} query.payload The payload object, e.g; { post_id: 12 }
  * @param {Object} options
  * @param {string} options.action Redux action type
- * @param {Function} options.onSuccess Side effect function to be executed upon success of failure, e.g. { onSuccess: response => refresh() } }
- * @param {Function} options.onFailure Side effect function to be executed upon failure, e.g. { onFailure: error => notify(error.message) } }
+ * @param {boolean} options.enabled Flag to conditionally run the query. If it's false, the query will not run
+ * @param {Function} options.onSuccess Side effect function to be executed upon success, e.g. () => refresh()
+ * @param {Function} options.onFailure Side effect function to be executed upon failure, e.g. (error) => notify(error.message)
  * @param {Function} dataSelector Redux selector to get the result. Required.
  * @param {Function} totalSelector Redux selector to get the total (optional, only for LIST queries)
+ * @param {Function} isDataLoaded
  *
  * @returns The current request state. Destructure as { data, total, error, loading, loaded }.
  *
@@ -108,11 +108,12 @@ const defaultTotalSelector = query => (state: ReduxState) => {
  *     return <div>User {data.username}</div>;
  * };
  */
-const useQueryWithStore = (
+const useQueryWithStore = <State extends ReduxState = ReduxState>(
     query: Query,
     options: QueryOptions = { action: 'CUSTOM_QUERY' },
-    dataSelector: (state: ReduxState) => any = defaultDataSelector(query),
-    totalSelector: (state: ReduxState) => number = defaultTotalSelector(query)
+    dataSelector: (state: State) => any = defaultDataSelector(query),
+    totalSelector: (state: State) => number = defaultTotalSelector(query),
+    isDataLoaded: (data: any) => boolean = defaultIsDataLoaded
 ): {
     data?: any;
     total?: number;
@@ -134,7 +135,7 @@ const useQueryWithStore = (
         total,
         error: null,
         loading: true,
-        loaded: data !== undefined && !isEmptyList(data),
+        loaded: isDataLoaded(data),
     });
 
     useEffect(() => {
@@ -146,7 +147,7 @@ const useQueryWithStore = (
                 total,
                 error: null,
                 loading: true,
-                loaded: data !== undefined && !isEmptyList(data),
+                loaded: isDataLoaded(data),
             });
         } else if (!isEqual(state.data, data) || state.total !== total) {
             // the dataProvider response arrived in the Redux store
@@ -160,44 +161,74 @@ const useQueryWithStore = (
                     data,
                     total,
                     loaded: true,
+                    loading: false,
                 }));
             }
         }
-    }, [data, requestSignature, setState, state.data, state.total, total]);
+    }, [
+        data,
+        requestSignature,
+        setState,
+        state.data,
+        state.total,
+        total,
+        isDataLoaded,
+    ]);
 
     const dataProvider = useDataProvider();
     useEffect(() => {
-        setState(prevState => ({ ...prevState, loading: true }));
+        // When several identical queries are issued during the same tick,
+        // we only pass one query to the dataProvider.
+        // To achieve that, the closure keeps a list of dataProvider promises
+        // issued this tick. Before calling the dataProvider, this effect
+        // checks if another effect has already issued a similar dataProvider
+        // call.
+        if (!queriesThisTick.hasOwnProperty(requestSignature)) {
+            queriesThisTick[requestSignature] = new Promise<PartialQueryState>(
+                resolve => {
+                    dataProvider[type](resource, payload, options)
+                        .then(() => {
+                            // We don't care about the dataProvider response here, because
+                            // it was already passed to SUCCESS reducers by the dataProvider
+                            // hook, and the result is available from the Redux store
+                            // through the data and total selectors.
+                            // In addition, if the query is optimistic, the response
+                            // will be empty, so it should not be used at all.
+                            if (
+                                requestSignature !== requestSignatureRef.current
+                            ) {
+                                resolve(undefined);
+                            }
 
-        dataProvider[type](resource, payload, options)
-            .then(() => {
-                // We don't care about the dataProvider response here, because
-                // it was already passed to SUCCESS reducers by the dataProvider
-                // hook, and the result is available from the Redux store
-                // through the data and total selectors.
-                // In addition, if the query is optimistic, the response
-                // will be empty, so it should not be used at all.
-                if (requestSignature !== requestSignatureRef.current) {
-                    return;
+                            resolve({
+                                error: null,
+                                loading: false,
+                                loaded: true,
+                            });
+                        })
+                        .catch(error => {
+                            if (
+                                requestSignature !== requestSignatureRef.current
+                            ) {
+                                resolve(undefined);
+                            }
+                            resolve({
+                                error,
+                                loading: false,
+                                loaded: false,
+                            });
+                        });
                 }
-
-                setState(prevState => ({
-                    ...prevState,
-                    error: null,
-                    loading: false,
-                    loaded: true,
-                }));
-            })
-            .catch(error => {
-                if (requestSignature !== requestSignatureRef.current) {
-                    return;
-                }
-                setState({
-                    error,
-                    loading: false,
-                    loaded: false,
-                });
-            });
+            );
+            // cleanup the list on next tick
+            setTimeout(() => {
+                delete queriesThisTick[requestSignature];
+            }, 0);
+        }
+        (async () => {
+            const newState = await queriesThisTick[requestSignature];
+            if (newState) setState(state => ({ ...state, ...newState }));
+        })();
         // deep equality, see https://github.com/facebook/react/issues/14476#issuecomment-471199055
     }, [requestSignature]); // eslint-disable-line
 

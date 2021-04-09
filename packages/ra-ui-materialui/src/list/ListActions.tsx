@@ -4,9 +4,11 @@ import PropTypes from 'prop-types';
 import {
     sanitizeListRestProps,
     Identifier,
-    Sort,
+    SortPayload,
     Exporter,
     useListContext,
+    useResourceContext,
+    useResourceDefinition,
 } from 'ra-core';
 import { ToolbarProps } from '@material-ui/core';
 
@@ -17,15 +19,15 @@ const ListActions: FC<ListActionsProps> = props => {
     const { className, exporter, filters, ...rest } = props;
     const {
         currentSort,
-        resource,
         displayedFilters,
         filterValues,
-        hasCreate,
         basePath,
         selectedIds,
         showFilter,
         total,
     } = useListContext(props);
+    const resource = useResourceContext(rest);
+    const { hasCreate } = useResourceDefinition(rest);
     return useMemo(
         () => (
             <TopToolbar className={className} {...sanitizeListRestProps(rest)}>
@@ -73,8 +75,8 @@ ListActions.defaultProps = {
     onUnselectItems: () => null,
 };
 
-interface ListActionsProps extends ToolbarProps {
-    currentSort?: Sort;
+export interface ListActionsProps extends ToolbarProps {
+    currentSort?: SortPayload;
     className?: string;
     resource?: string;
     filters?: ReactElement<any>;

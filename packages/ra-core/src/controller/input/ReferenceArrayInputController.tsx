@@ -1,40 +1,9 @@
-import {
-    ComponentType,
-    FunctionComponent,
-    ReactElement,
-    useCallback,
-} from 'react';
+import { ComponentType, ReactElement, useCallback } from 'react';
 import debounce from 'lodash/debounce';
 
-import { Record, Sort, Pagination } from '../../types';
-import useReferenceArrayInputController from './useReferenceArrayInputController';
-
-interface ChildrenFuncParams {
-    choices: Record[];
-    error?: string;
-    loaded: boolean;
-    loading: boolean;
-    setFilter: (filter: any) => void;
-    setPagination: (pagination: Pagination) => void;
-    setSort: (sort: Sort) => void;
-    warning?: string;
-}
-
-interface Props {
-    allowEmpty?: boolean;
-    basePath: string;
-    children: (params: ChildrenFuncParams) => ReactElement;
-    filter?: object;
-    filterToQuery?: (filter: {}) => any;
-    input?: any;
-    meta?: object;
-    perPage?: number;
-    record?: Record;
-    reference: string;
-    resource: string;
-    sort?: Sort;
-    source: string;
-}
+import { Record, SortPayload, PaginationPayload } from '../../types';
+import { useReferenceArrayInputController } from './useReferenceArrayInputController';
+import { ListControllerProps } from '..';
 
 /**
  * An Input component for fields containing a list of references to another resource.
@@ -49,7 +18,7 @@ interface Props {
  *
  * ReferenceArrayInput component fetches the current resources (using
  * `dataProvider.getMany()`) as well as possible resources (using
- * `dataProvider.getMatching()` REST method) in the reference endpoint. It then
+ * `dataProvider.getList()` REST method) in the reference endpoint. It then
  * delegates rendering to a subcomponent, to which it passes the possible
  * choices as the `choices` attribute.
  *
@@ -114,7 +83,7 @@ interface Props {
  *     <SelectArrayInput optionText="name" />
  * </ReferenceArrayInput>
  */
-const ReferenceArrayInputController: FunctionComponent<Props> = ({
+const ReferenceArrayInputController = ({
     basePath,
     children,
     filter = {},
@@ -125,17 +94,8 @@ const ReferenceArrayInputController: FunctionComponent<Props> = ({
     resource,
     sort = { field: 'id', order: 'DESC' },
     source,
-}) => {
-    const {
-        choices,
-        error,
-        loaded,
-        loading,
-        setFilter,
-        setPagination,
-        setSort,
-        warning,
-    } = useReferenceArrayInputController({
+}: ReferenceArrayInputControllerProps) => {
+    const { setFilter, ...controllerProps } = useReferenceArrayInputController({
         basePath,
         filter,
         filterToQuery,
@@ -147,20 +107,48 @@ const ReferenceArrayInputController: FunctionComponent<Props> = ({
         source,
     });
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const debouncedSetFilter = useCallback(debounce(setFilter, 500), [
         setFilter,
     ]);
 
     return children({
-        choices,
-        error,
-        loaded,
-        loading,
+        ...controllerProps,
         setFilter: debouncedSetFilter,
-        setPagination,
-        setSort,
-        warning,
     });
 };
 
-export default ReferenceArrayInputController as ComponentType<Props>;
+export interface ReferenceArrayInputControllerChildrenFuncParams
+    extends Omit<ListControllerProps, 'setSort'> {
+    choices: Record[];
+    error?: string;
+    loaded: boolean;
+    loading: boolean;
+    setFilter: (filter: any) => void;
+    setPagination: (pagination: PaginationPayload) => void;
+    setSort: (sort: SortPayload) => void;
+    setSortForList: (sort: string, order?: string) => void;
+    warning?: string;
+}
+
+interface ReferenceArrayInputControllerProps {
+    allowEmpty?: boolean;
+    basePath: string;
+    children: (
+        params: ReferenceArrayInputControllerChildrenFuncParams
+    ) => ReactElement;
+    filter?: object;
+    filterToQuery?: (filter: {}) => any;
+    input?: any;
+    meta?: object;
+    perPage?: number;
+    record?: Record;
+    reference: string;
+    resource: string;
+    sort?: SortPayload;
+    source: string;
+}
+
+export default ReferenceArrayInputController as ComponentType<
+    ReferenceArrayInputControllerProps
+>;

@@ -3,8 +3,12 @@ import { FC } from 'react';
 import { Typography } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import Inbox from '@material-ui/icons/Inbox';
-import { useTranslate, useListContext } from 'ra-core';
-import inflection from 'inflection';
+import {
+    useTranslate,
+    useListContext,
+    useResourceContext,
+    useGetResourceLabel,
+} from 'ra-core';
 
 import { ClassesOverride } from '../types';
 import { CreateButton } from '../button';
@@ -33,19 +37,15 @@ const useStyles = makeStyles(
 );
 
 const Empty: FC<EmptyProps> = props => {
-    const { resource, basePath } = useListContext(props);
+    const { basePath, hasCreate } = useListContext(props);
+    const resource = useResourceContext(props);
     const classes = useStyles(props);
     const translate = useTranslate();
 
+    const getResourceLabel = useGetResourceLabel();
     const resourceName = translate(`resources.${resource}.forcedCaseName`, {
         smart_count: 0,
-        _: inflection.humanize(
-            translate(`resources.${resource}.name`, {
-                smart_count: 0,
-                _: inflection.pluralize(resource),
-            }),
-            true
-        ),
+        _: getResourceLabel(resource, 0),
     });
 
     const emptyMessage = translate('ra.page.empty', { name: resourceName });
@@ -60,21 +60,26 @@ const Empty: FC<EmptyProps> = props => {
                         _: emptyMessage,
                     })}
                 </Typography>
-                <Typography variant="body1">
-                    {translate(`resources.${resource}.invite`, {
-                        _: inviteMessage,
-                    })}
-                </Typography>
+                {hasCreate && (
+                    <Typography variant="body1">
+                        {translate(`resources.${resource}.invite`, {
+                            _: inviteMessage,
+                        })}
+                    </Typography>
+                )}
             </div>
-            <div className={classes.toolbar}>
-                <CreateButton variant="contained" basePath={basePath} />
-            </div>
+            {hasCreate && (
+                <div className={classes.toolbar}>
+                    <CreateButton variant="contained" basePath={basePath} />
+                </div>
+            )}
         </>
     );
 };
 
 export interface EmptyProps {
     classes?: ClassesOverride<typeof useStyles>;
+    resource?: string;
 }
 
 export default Empty;

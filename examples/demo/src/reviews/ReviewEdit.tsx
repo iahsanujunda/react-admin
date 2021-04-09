@@ -2,13 +2,14 @@ import * as React from 'react';
 import { FC } from 'react';
 import {
     useEditController,
+    EditContextProvider,
     useTranslate,
     TextInput,
     SimpleForm,
     DateField,
+    EditProps,
 } from 'react-admin';
-import IconButton from '@material-ui/core/IconButton';
-import Typography from '@material-ui/core/Typography';
+import { IconButton, Typography } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import CloseIcon from '@material-ui/icons/Close';
 
@@ -16,7 +17,7 @@ import ProductReferenceField from '../products/ProductReferenceField';
 import CustomerReferenceField from '../visitors/CustomerReferenceField';
 import StarRatingField from './StarRatingField';
 import ReviewEditToolbar from './ReviewEditToolbar';
-import { EditComponentProps } from '../types';
+import { Review } from '../types';
 
 const useStyles = makeStyles(theme => ({
     root: {
@@ -43,13 +44,13 @@ const useStyles = makeStyles(theme => ({
     },
 }));
 
-interface Props extends EditComponentProps {
+interface Props extends EditProps {
     onCancel: () => void;
 }
 
 const ReviewEdit: FC<Props> = ({ onCancel, ...props }) => {
     const classes = useStyles();
-    const controllerProps = useEditController(props);
+    const controllerProps = useEditController<Review>(props);
     const translate = useTranslate();
     if (!controllerProps.record) {
         return null;
@@ -64,22 +65,36 @@ const ReviewEdit: FC<Props> = ({ onCancel, ...props }) => {
                     <CloseIcon />
                 </IconButton>
             </div>
-            <SimpleForm
-                className={classes.form}
-                basePath={controllerProps.basePath}
-                record={controllerProps.record}
-                save={controllerProps.save}
-                version={controllerProps.version}
-                redirect="list"
-                resource="reviews"
-                toolbar={<ReviewEditToolbar />}
-            >
-                <CustomerReferenceField formClassName={classes.inlineField} />
-                <ProductReferenceField formClassName={classes.inlineField} />
-                <DateField source="date" formClassName={classes.inlineField} />
-                <StarRatingField formClassName={classes.inlineField} />
-                <TextInput source="comment" rowsMax={15} multiline fullWidth />
-            </SimpleForm>
+            <EditContextProvider value={controllerProps}>
+                <SimpleForm
+                    className={classes.form}
+                    basePath={controllerProps.basePath}
+                    record={controllerProps.record}
+                    save={controllerProps.save}
+                    version={controllerProps.version}
+                    redirect="list"
+                    resource="reviews"
+                    toolbar={<ReviewEditToolbar />}
+                >
+                    <CustomerReferenceField
+                        formClassName={classes.inlineField}
+                    />
+                    <ProductReferenceField
+                        formClassName={classes.inlineField}
+                    />
+                    <DateField
+                        source="date"
+                        formClassName={classes.inlineField}
+                    />
+                    <StarRatingField formClassName={classes.inlineField} />
+                    <TextInput
+                        source="comment"
+                        rowsMax={15}
+                        multiline
+                        fullWidth
+                    />
+                </SimpleForm>
+            </EditContextProvider>
         </div>
     );
 };

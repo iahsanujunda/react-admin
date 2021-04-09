@@ -1,10 +1,11 @@
 import * as React from 'react';
-import { FC, memo } from 'react';
-import { Record } from 'ra-core';
+import { useMemo } from 'react';
+import { Record, useRecordContext } from 'ra-core';
+import PropTypes from 'prop-types';
 import Typography, { TypographyProps } from '@material-ui/core/Typography';
 
-import sanitizeRestProps from './sanitizeRestProps';
-import { FieldProps, InjectedFieldProps, fieldPropTypes } from './types';
+import sanitizeFieldRestProps from './sanitizeFieldRestProps';
+import { PublicFieldProps, InjectedFieldProps, fieldPropTypes } from './types';
 
 /**
  * Field using a render function
@@ -16,19 +17,26 @@ import { FieldProps, InjectedFieldProps, fieldPropTypes } from './types';
  *     render={record => record && `${record.first_name} ${record.last_name}`}
  * />
  */
-const FunctionField: FC<FunctionFieldProps> = memo<FunctionFieldProps>(
-    ({ className, record, source = '', render, ...rest }) =>
-        record ? (
-            <Typography
-                component="span"
-                variant="body2"
-                className={className}
-                {...sanitizeRestProps(rest)}
-            >
-                {render(record, source)}
-            </Typography>
-        ) : null
-);
+const FunctionField = <RecordType extends Record = Record>(
+    props: FunctionFieldProps<RecordType>
+) => {
+    const { className, source = '', render, ...rest } = props;
+    const record = useRecordContext(props);
+    return useMemo(
+        () =>
+            record ? (
+                <Typography
+                    component="span"
+                    variant="body2"
+                    className={className}
+                    {...sanitizeFieldRestProps(rest)}
+                >
+                    {render(record, source)}
+                </Typography>
+            ) : null,
+        [className, record, source, render, rest]
+    );
+};
 
 FunctionField.defaultProps = {
     addLabel: true,
@@ -38,13 +46,14 @@ FunctionField.propTypes = {
     // @ts-ignore
     ...Typography.propTypes,
     ...fieldPropTypes,
+    render: PropTypes.func.isRequired,
 };
 
-export interface FunctionFieldProps
-    extends FieldProps,
-        InjectedFieldProps,
+export interface FunctionFieldProps<RecordType extends Record = Record>
+    extends PublicFieldProps,
+        InjectedFieldProps<RecordType>,
         TypographyProps {
-    render: (record?: Record, source?: string) => any;
+    render: (record?: RecordType, source?: string) => any;
 }
 
 export default FunctionField;

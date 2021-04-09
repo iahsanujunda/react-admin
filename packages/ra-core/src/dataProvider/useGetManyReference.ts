@@ -1,14 +1,31 @@
-import { useSelector, shallowEqual } from 'react-redux';
+import get from 'lodash/get';
+import { useMemo } from 'react';
+
 import { CRUD_GET_MANY_REFERENCE } from '../actions/dataActions/crudGetManyReference';
-import { Pagination, Sort, Identifier, ReduxState } from '../types';
+import {
+    PaginationPayload,
+    SortPayload,
+    Identifier,
+    ReduxState,
+    Record,
+    RecordMap,
+} from '../types';
 import useQueryWithStore from './useQueryWithStore';
 import {
-    getReferences,
     getIds,
     getTotal,
     nameRelatedTo,
 } from '../reducer/admin/references/oneToMany';
-import { useMemo } from 'react';
+
+const defaultIds = [];
+const defaultData = {};
+
+interface UseGetManyReferenceOptions {
+    onSuccess?: (args?: any) => void;
+    onFailure?: (error: any) => void;
+    enabled?: boolean;
+    [key: string]: any;
+}
 
 /**
  * Call the dataProvider.getManyReference() method and return the resolved result
@@ -30,7 +47,10 @@ import { useMemo } from 'react';
  * @param {Object} sort The request sort { field, order }, e.g. { field: 'id', order: 'DESC' }
  * @param {Object} filter The request filters, e.g. { body: 'hello, world' }
  * @param {string} referencingResource The resource name, e.g. 'posts'. Used to generate a cache key
- * @param {Object} options Options object to pass to the dataProvider. May include side effects to be executed upon success of failure, e.g. { onSuccess: { refresh: true } }
+ * @param {Object} options Options object to pass to the dataProvider.
+ * @param {boolean} options.enabled Flag to conditionally run the query. If it's false, the query will not run
+ * @param {Function} options.onSuccess Side effect function to be executed upon success, e.g. { onSuccess: { refresh: true } }
+ * @param {Function} options.onFailure Side effect function to be executed upon failure, e.g. { onFailure: error => notify(error.message) }
  *
  * @returns The current request state. Destructure as { data, total, ids, error, loading, loaded }.
  *
@@ -59,40 +79,65 @@ const useGetManyReference = (
     resource: string,
     target: string,
     id: Identifier,
-    pagination: Pagination,
-    sort: Sort,
+    pagination: PaginationPayload,
+    sort: SortPayload,
     filter: object,
     referencingResource: string,
-    options?: any
+    options?: UseGetManyReferenceOptions
 ) => {
     const relatedTo = useMemo(
         () => nameRelatedTo(resource, id, referencingResource, target, filter),
         [filter, resource, id, referencingResource, target]
     );
 
-    const { data: ids, total, error, loading, loaded } = useQueryWithStore(
+    const {
+        data: { ids, allRecords },
+        total,
+        error,
+        loading,
+        loaded,
+    } = useQueryWithStore(
         {
             type: 'getManyReference',
             resource: resource,
             payload: { target, id, pagination, sort, filter },
         },
         { ...options, relatedTo, action: CRUD_GET_MANY_REFERENCE },
-        selectIds(relatedTo),
-        selectTotal(relatedTo)
+        // ids and data selector
+        (state: ReduxState) => ({
+            ids: getIds(state, relatedTo),
+            allRecords: get(
+                state.admin.resources,
+                [resource, 'data'],
+                defaultData
+            ),
+        }),
+        (state: ReduxState) => getTotal(state, relatedTo),
+        isDataLoaded
     );
-    const data = useSelector(selectData(resource, relatedTo), shallowEqual);
 
-    return { data, ids, total, error, loading, loaded };
+    const data = useMemo(
+        () =>
+            ids == null
+                ? defaultData
+                : ids
+                      .map(id => allRecords[id])
+                      .reduce((acc, record) => {
+                          if (!record) return acc;
+                          acc[record.id] = record;
+                          return acc;
+                      }, {}),
+        [ids, allRecords]
+    );
+
+    return { data, ids: ids || defaultIds, total, error, loading, loaded };
 };
 
+interface DataSelectorResult<RecordType extends Record = Record> {
+    ids: Identifier[];
+    allRecords: RecordMap<RecordType>;
+}
+
+const isDataLoaded = (data: DataSelectorResult) => data.ids != null;
+
 export default useGetManyReference;
-
-const selectData = (reference: string, relatedTo: string) => (
-    state: ReduxState
-) => getReferences(state, reference, relatedTo);
-
-const selectIds = (relatedTo: string) => (state: ReduxState) =>
-    getIds(state, relatedTo);
-
-const selectTotal = (relatedTo: string) => (state: ReduxState) =>
-    getTotal(state, relatedTo);

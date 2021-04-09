@@ -1,6 +1,7 @@
 import * as React from 'react';
-import useListController from './useListController';
-import ListContext from './ListContext';
+import { ReactNode } from 'react';
+import useListController, { ListProps } from './useListController';
+import ListContextProvider from './ListContextProvider';
 
 /**
  * Call useListController and put the value in a ListContext
@@ -18,7 +19,7 @@ import ListContext from './ListContext';
  * @example // Custom list layout
  *
  * const PostList = props => (
- *     <BaseList {...props} perPage={10}>
+ *     <ListBase {...props} perPage={10}>
  *         <div>
  *              List metrics...
  *         </div>
@@ -33,13 +34,16 @@ import ListContext from './ListContext';
  *         <div>
  *             Post related links...
  *         </div>
- *     </BaseList>
+ *     </ListBase>
  * );
  */
-const ListBase = ({ children, ...props }) => (
-    <ListContext.Provider value={useListController(props)}>
+const ListBase = ({
+    children,
+    ...props
+}: ListProps & { children: ReactNode }) => (
+    <ListContextProvider value={useListController(props)}>
         {children}
-    </ListContext.Provider>
+    </ListContextProvider>
 );
 
 export default ListBase;

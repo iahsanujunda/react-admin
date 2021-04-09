@@ -5,7 +5,7 @@ export default url => ({
         displayedRecords: '.displayed-records',
         filter: name => `.filter-field[data-source='${name}'] input`,
         filterMenuItems: `.new-filter-item`,
-        menuItems: `[role=menuitem`,
+        menuItems: `[role=menuitem]`,
         filterMenuItem: source => `.new-filter-item[data-key="${source}"]`,
         hideFilterButton: source =>
             `.filter-field[data-source="${source}"] .hide-filter`,
@@ -15,9 +15,10 @@ export default url => ({
         recordRows: '.datagrid-body tr',
         viewsColumn: '.datagrid-body tr td:nth-child(7)',
         datagridHeaders: 'th',
-        sortBy: name => `th span[data-sort="${name}"]`,
+        sortBy: name => `th span[data-field="${name}"]`,
         svg: (name, criteria = '') =>
-            `th span[data-sort="${name}"] svg${criteria}`,
+            `th span[data-field="${name}"] svg${criteria}`,
+        profile: '[aria-label="Profile"]',
         logout: '.logout',
         bulkActionsToolbar: '[data-test=bulk-actions-toolbar]',
         customBulkActionsButton:
@@ -31,6 +32,7 @@ export default url => ({
         title: '#react-admin-title',
         headroomUnfixed: '.headroom--unfixed',
         headroomUnpinned: '.headroom--unpinned',
+        skipNavButton: '.skip-nav-button',
     },
 
     navigate() {

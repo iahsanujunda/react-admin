@@ -1,19 +1,28 @@
-import ArrayField from './ArrayField';
-import BooleanField from './BooleanField';
-import ChipField from './ChipField';
-import DateField from './DateField';
-import EmailField from './EmailField';
-import FileField from './FileField';
-import ImageField from './ImageField';
-import FunctionField from './FunctionField';
-import NumberField from './NumberField';
-import ReferenceField from './ReferenceField';
-import ReferenceArrayField from './ReferenceArrayField';
-import ReferenceManyField from './ReferenceManyField';
-import RichTextField from './RichTextField';
-import SelectField from './SelectField';
-import TextField from './TextField';
-import UrlField from './UrlField';
+import ArrayField, { ArrayFieldProps } from './ArrayField';
+import BooleanField, { BooleanFieldProps } from './BooleanField';
+import ChipField, { ChipFieldProps } from './ChipField';
+import DateField, { DateFieldProps } from './DateField';
+import EmailField, { EmailFieldProps } from './EmailField';
+import FileField, { FileFieldProps } from './FileField';
+import ImageField, { ImageFieldProps } from './ImageField';
+import FunctionField, { FunctionFieldProps } from './FunctionField';
+import NumberField, { NumberFieldProps } from './NumberField';
+import ReferenceField, { ReferenceFieldProps } from './ReferenceField';
+import ReferenceArrayField, {
+    ReferenceArrayFieldProps,
+} from './ReferenceArrayField';
+import ReferenceManyField, {
+    ReferenceManyFieldProps,
+} from './ReferenceManyField';
+import RichTextField, { RichTextFieldProps } from './RichTextField';
+import SelectField, { SelectFieldProps } from './SelectField';
+import TextField, { TextFieldProps } from './TextField';
+import UrlField, { UrlFieldProps } from './UrlField';
+import sanitizeFieldRestProps from './sanitizeFieldRestProps';
+import { FieldProps } from './types';
+
+export * from './TranslatableFields';
+export * from './TranslatableFieldsTabContent';
 
 export {
     ArrayField,
@@ -32,4 +41,25 @@ export {
     SelectField,
     TextField,
     UrlField,
+    sanitizeFieldRestProps,
+};
+
+export type {
+    ArrayFieldProps,
+    BooleanFieldProps,
+    ChipFieldProps,
+    DateFieldProps,
+    EmailFieldProps,
+    FileFieldProps,
+    ImageFieldProps,
+    FunctionFieldProps,
+    NumberFieldProps,
+    ReferenceFieldProps,
+    ReferenceArrayFieldProps,
+    ReferenceManyFieldProps,
+    RichTextFieldProps,
+    SelectFieldProps,
+    TextFieldProps,
+    UrlFieldProps,
+    FieldProps,
 };

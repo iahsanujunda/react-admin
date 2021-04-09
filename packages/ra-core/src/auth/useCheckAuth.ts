@@ -10,7 +10,7 @@ import useNotify from '../sideEffect/useNotify';
  * and throws an error.
  *
  * This is a low level hook. See those more specialized hooks
- * for common authentication tasks, based on useAuthCheck.
+ * for common authentication tasks, based on useCheckAuth.
  *
  * @see useAuthenticated
  * @see useAuthState
@@ -49,7 +49,8 @@ const useCheckAuth = (): CheckAuth => {
         (
             params: any = {},
             logoutOnFailure = true,
-            redirectTo = defaultAuthParams.loginUrl
+            redirectTo = defaultAuthParams.loginUrl,
+            disableNotification = false
         ) =>
             authProvider.checkAuth(params).catch(error => {
                 if (logoutOnFailure) {
@@ -59,10 +60,14 @@ const useCheckAuth = (): CheckAuth => {
                             ? error.redirectTo
                             : redirectTo
                     );
-                    notify(
-                        getErrorMessage(error, 'ra.auth.auth_check_error'),
-                        'warning'
-                    );
+                    const shouldSkipNotify =
+                        disableNotification ||
+                        (error && error.message === false);
+                    !shouldSkipNotify &&
+                        notify(
+                            getErrorMessage(error, 'ra.auth.auth_check_error'),
+                            'warning'
+                        );
                 }
                 throw error;
             }),
@@ -79,15 +84,18 @@ const checkAuthWithoutAuthProvider = () => Promise.resolve();
  * Logs the user out on failure.
  *
  * @param {Object} params The parameters to pass to the authProvider
- * @param {boolean} logoutOnFailure Whether the user should be logged out if the authProvider fails to authenticatde them. True by default.
+ * @param {boolean} logoutOnFailure Whether the user should be logged out if the authProvider fails to authenticate them. True by default.
  * @param {string} redirectTo The login form url. Defaults to '/login'
+ * @param {boolean} disableNotification Avoid showing a notification after the user is logged out. false by default.
  *
  * @return {Promise} Resolved to the authProvider response if the user passes the check, or rejected with an error otherwise
  */
 type CheckAuth = (
     params?: any,
     logoutOnFailure?: boolean,
-    redirectTo?: string
+    redirectTo?: string,
+    /** @deprecated to disable the notification, authProvider.checkAuth() should return an object with an error property set to true */
+    disableNotification?: boolean
 ) => Promise<any>;
 
 const getErrorMessage = (error, defaultMessage) =>

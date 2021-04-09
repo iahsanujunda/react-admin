@@ -4,25 +4,25 @@ import {
     SORT_ASC,
     SORT_DESC,
 } from '../reducer/admin/resource/list/queryReducer';
-import { Sort } from '../types';
+import { SortPayload } from '../types';
 
 export interface SortProps {
     setSortField: (field: string) => void;
     setSortOrder: (order: string) => void;
-    setSort: (sort: Sort, order?: string) => void;
-    sort: Sort;
+    setSort: (sort: SortPayload, order?: string) => void;
+    sort: SortPayload;
 }
 
 interface Action {
     type: 'SET_SORT' | 'SET_SORT_FIELD' | 'SET_SORT_ORDER';
     payload: {
-        sort?: Sort;
+        sort?: SortPayload;
         field?: string;
         order?: string;
     };
 }
 
-const sortReducer = (state: Sort, action: Action): Sort => {
+const sortReducer = (state: SortPayload, action: Action): SortPayload => {
     switch (action.type) {
         case 'SET_SORT':
             return action.payload.sort;
@@ -51,24 +51,24 @@ const sortReducer = (state: Sort, action: Action): Sort => {
 export const defaultSort = { field: 'id', order: 'DESC' };
 
 /**
- * set the sort { field, order }
+ * Set the sort { field, order }
  * @name setSort
  * @function
- * @param {Sort} sort the sort object
+ * @param {SortPayload} sort the sort object
  */
 
 /**
- * set the sort field, swap the order if the field is the same
+ * Set the sort field, swap the order if the field is the same
  * @name setSortField
  * @function
  * @param {string} field the sort field
  */
 
 /**
- * set the sort order
+ * Set the sort order
  * @name setSortOrder
  * @function
- * @param {string} order the sort order eiather ASC or DESC
+ * @param {string} order The sort order, either ASC or DESC
  */
 
 /**
@@ -102,7 +102,7 @@ export const defaultSort = { field: 'id', order: 'DESC' };
  * @param {string} initialSort.order The initial sort order
  * @returns {SortProps} The sort props
  */
-const useSortState = (initialSort: Sort = defaultSort): SortProps => {
+const useSortState = (initialSort: SortPayload = defaultSort): SortProps => {
     const [sort, dispatch] = useReducer(sortReducer, initialSort);
     const isFirstRender = useRef(true);
     useEffect(() => {
@@ -115,7 +115,8 @@ const useSortState = (initialSort: Sort = defaultSort): SortProps => {
 
     return {
         setSort: useCallback(
-            (sort: Sort) => dispatch({ type: 'SET_SORT', payload: { sort } }),
+            (sort: SortPayload) =>
+                dispatch({ type: 'SET_SORT', payload: { sort } }),
             [dispatch]
         ),
         setSortField: useCallback(

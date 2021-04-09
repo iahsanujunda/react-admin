@@ -4,24 +4,29 @@ import PropTypes from 'prop-types';
 import classnames from 'classnames';
 import get from 'lodash/get';
 import { makeStyles } from '@material-ui/core/styles';
+import { Typography } from '@material-ui/core';
 import ErrorIcon from '@material-ui/icons/Error';
 import {
     useReference,
     UseReferenceProps,
     getResourceLinkPath,
     LinkToType,
+    ResourceContextProvider,
+    RecordContextProvider,
+    Record,
+    useRecordContext,
 } from 'ra-core';
 
 import LinearProgress from '../layout/LinearProgress';
 import Link from '../Link';
-import sanitizeRestProps from './sanitizeRestProps';
-import { ClassNameMap } from '@material-ui/styles';
-import { FieldProps, fieldPropTypes, InjectedFieldProps } from './types';
+import sanitizeFieldRestProps from './sanitizeFieldRestProps';
+import { PublicFieldProps, fieldPropTypes, InjectedFieldProps } from './types';
+import { ClassesOverride } from '../types';
 
 /**
  * Fetch reference record, and delegate rendering to child component.
  *
- * The reference prop sould be the name of one of the <Resource> components
+ * The reference prop should be the name of one of the <Resource> components
  * added as <Admin> child.
  *
  * @example
@@ -54,7 +59,7 @@ import { FieldProps, fieldPropTypes, InjectedFieldProps } from './types';
  * as arguments and return a string
  *
  * @example
- * <ReferenceField label="User" source="userId" reference="users" link={(reference, record) => "/path/to/${reference}/${record}"}>
+ * <ReferenceField label="User" source="userId" reference="users" link={(record, reference) => "/path/to/${reference}/${record}"}>
  *     <TextField source="name" />
  * </ReferenceField>
  *
@@ -62,36 +67,17 @@ import { FieldProps, fieldPropTypes, InjectedFieldProps } from './types';
  * In previous versions of React-Admin, the prop `linkType` was used. It is now deprecated and replaced with `link`. However
  * backward-compatibility is still kept
  */
-
-const ReferenceField: FC<ReferenceFieldProps> = ({
-    children,
-    record,
-    source,
-    ...props
-}) => {
-    if (React.Children.count(children) !== 1) {
-        throw new Error('<ReferenceField> only accepts a single child');
-    }
-    const { basePath, resource } = props;
-    const resourceLinkPath = getResourceLinkPath({
-        ...props,
-        resource,
-        record,
-        source,
-        basePath,
-    });
-
-    return (
-        <PureReferenceFieldView
-            {...props}
-            {...useReference({
-                reference: props.reference,
-                id: get(record, source),
-            })}
-            resourceLinkPath={resourceLinkPath}
-        >
-            {children}
-        </PureReferenceFieldView>
+const ReferenceField: FC<ReferenceFieldProps> = props => {
+    const { source, emptyText, ...rest } = props;
+    const record = useRecordContext(props);
+    return get(record, source) == null ? (
+        emptyText ? (
+            <Typography component="span" variant="body2">
+                {emptyText}
+            </Typography>
+        ) : null
+    ) : (
+        <NonEmptyReferenceField {...rest} record={record} source={source} />
     );
 };
 
@@ -103,7 +89,7 @@ ReferenceField.propTypes = {
     className: PropTypes.string,
     cellClassName: PropTypes.string,
     headerClassName: PropTypes.string,
-    label: PropTypes.string,
+    label: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
     record: PropTypes.any,
     reference: PropTypes.string.isRequired,
     resource: PropTypes.string,
@@ -129,9 +115,11 @@ ReferenceField.defaultProps = {
     link: 'edit',
 };
 
-interface ReferenceFieldProps extends FieldProps, InjectedFieldProps {
+export interface ReferenceFieldProps<RecordType extends Record = Record>
+    extends PublicFieldProps,
+        InjectedFieldProps<RecordType> {
     children: ReactElement;
-    classes?: Partial<ClassNameMap<ReferenceFieldClassKey>>;
+    classes?: ClassesOverride<typeof useStyles>;
     reference: string;
     resource?: string;
     source: string;
@@ -139,6 +127,42 @@ interface ReferenceFieldProps extends FieldProps, InjectedFieldProps {
     linkType?: LinkToType;
     link?: LinkToType;
 }
+
+/**
+ * This intermediate component is made necessary by the useReference hook,
+ * which cannot be called conditionally when get(record, source) is empty.
+ */
+export const NonEmptyReferenceField: FC<Omit<
+    ReferenceFieldProps,
+    'emptyText'
+>> = ({ children, record, source, ...props }) => {
+    if (React.Children.count(children) !== 1) {
+        throw new Error('<ReferenceField> only accepts a single child');
+    }
+    const { basePath, resource, reference } = props;
+    const resourceLinkPath = getResourceLinkPath({
+        ...props,
+        resource,
+        record,
+        source,
+        basePath,
+    });
+
+    return (
+        <ResourceContextProvider value={reference}>
+            <PureReferenceFieldView
+                {...props}
+                {...useReference({
+                    reference,
+                    id: get(record, source),
+                })}
+                resourceLinkPath={resourceLinkPath}
+            >
+                {children}
+            </PureReferenceFieldView>
+        </ResourceContextProvider>
+    );
+};
 
 const useStyles = makeStyles(
     theme => ({
@@ -171,17 +195,20 @@ export const ReferenceFieldView: FC<ReferenceFieldViewProps> = props => {
         ...rest
     } = props;
     const classes = useStyles(props);
+
     if (!loaded) {
         return <LinearProgress />;
     }
     if (error) {
         return (
+            /* eslint-disable jsx-a11y/role-supports-aria-props */
             <ErrorIcon
                 aria-errormessage={error.message ? error.message : error}
+                role="presentation"
                 color="error"
                 fontSize="small"
-                role="presentation"
             />
+            /* eslint-enable */
         );
     }
     if (!referenceRecord) {
@@ -190,33 +217,39 @@ export const ReferenceFieldView: FC<ReferenceFieldViewProps> = props => {
 
     if (resourceLinkPath) {
         return (
-            <Link
-                to={resourceLinkPath as string}
-                className={className}
-                onClick={stopPropagation}
-            >
-                {cloneElement(Children.only(children), {
-                    className: classnames(
-                        children.props.className,
-                        classes.link // force color override for Typography components
-                    ),
-                    record: referenceRecord,
-                    resource: reference,
-                    basePath,
-                    translateChoice,
-                    ...sanitizeRestProps(rest),
-                })}
-            </Link>
+            <RecordContextProvider value={referenceRecord}>
+                <Link
+                    to={resourceLinkPath as string}
+                    className={className}
+                    onClick={stopPropagation}
+                >
+                    {cloneElement(Children.only(children), {
+                        className: classnames(
+                            children.props.className,
+                            classes.link // force color override for Typography components
+                        ),
+                        record: referenceRecord,
+                        resource: reference,
+                        basePath,
+                        translateChoice,
+                        ...sanitizeFieldRestProps(rest),
+                    })}
+                </Link>
+            </RecordContextProvider>
         );
     }
 
-    return cloneElement(Children.only(children), {
-        record: referenceRecord,
-        resource: reference,
-        basePath,
-        translateChoice,
-        ...sanitizeRestProps(rest),
-    });
+    return (
+        <RecordContextProvider value={referenceRecord}>
+            {cloneElement(Children.only(children), {
+                record: referenceRecord,
+                resource: reference,
+                basePath,
+                translateChoice,
+                ...sanitizeFieldRestProps(rest),
+            })}
+        </RecordContextProvider>
+    );
 };
 
 ReferenceFieldView.propTypes = {
@@ -237,13 +270,11 @@ ReferenceFieldView.propTypes = {
     translateChoice: PropTypes.oneOfType([PropTypes.func, PropTypes.bool]),
 };
 
-type ReferenceFieldClassKey = 'link';
-
-interface ReferenceFieldViewProps
-    extends FieldProps,
+export interface ReferenceFieldViewProps
+    extends PublicFieldProps,
         InjectedFieldProps,
         UseReferenceProps {
-    classes?: Partial<ClassNameMap<ReferenceFieldClassKey>>;
+    classes?: ClassesOverride<typeof useStyles>;
     reference: string;
     resource?: string;
     translateChoice?: Function | boolean;

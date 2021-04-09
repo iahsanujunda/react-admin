@@ -1,34 +1,36 @@
 import * as React from 'react';
 import { FC } from 'react';
+import PropTypes from 'prop-types';
 import {
     NumberField,
     TextField,
     DateField,
     useTranslate,
     useGetList,
-    linkToRecord,
+    Record,
+    RecordMap,
+    Identifier,
+    ReferenceField,
+    useLocale,
 } from 'react-admin';
-import PropTypes from 'prop-types';
 import {
-    Tooltip,
     Typography,
     Card,
     CardContent,
-    CardHeader,
-    Avatar,
-    IconButton,
     Box,
+    Link,
+    Stepper,
+    Step,
+    StepLabel,
+    StepContent,
 } from '@material-ui/core';
-import { Link } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 import AccessTimeIcon from '@material-ui/icons/AccessTime';
-import ContentCreate from '@material-ui/icons/Create';
-import order from '../orders';
-import review from '../reviews';
 import { makeStyles } from '@material-ui/core/styles';
 
-import ProductReferenceField from '../products/ProductReferenceField';
+import order from '../orders';
+import review from '../reviews';
 import StarRatingField from '../reviews/StarRatingField';
-import { Record, RecordMap, Identifier } from 'ra-core';
 import { Order as OrderRecord, Review as ReviewRecord } from '../types';
 
 const useAsideStyles = makeStyles(theme => ({
@@ -63,15 +65,26 @@ interface EventListProps {
     record?: Record;
     basePath?: string;
 }
+
+const useEventStyles = makeStyles({
+    stepper: {
+        background: 'none',
+        border: 'none',
+        marginLeft: '0.3em',
+    },
+});
+
 const EventList: FC<EventListProps> = ({ record, basePath }) => {
     const translate = useTranslate();
-    const { data: orders, ids: orderIds } = useGetList(
+    const classes = useEventStyles();
+    const locale = useLocale();
+    const { data: orders, ids: orderIds } = useGetList<OrderRecord>(
         'commands',
         { page: 1, perPage: 100 },
         { field: 'date', order: 'DESC' },
         { customer_id: record && record.id }
     );
-    const { data: reviews, ids: reviewIds } = useGetList(
+    const { data: reviews, ids: reviewIds } = useGetList<ReviewRecord>(
         'reviews',
         { page: 1, perPage: 100 },
         { field: 'date', order: 'DESC' },
@@ -110,7 +123,7 @@ const EventList: FC<EventListProps> = ({ record, basePath }) => {
                                         />
                                     </Box>
                                 </Box>
-                                {orderIds.length > 0 && (
+                                {orderIds && orderIds.length > 0 && (
                                     <Box display="flex">
                                         <Box mr="1em">
                                             <order.icon
@@ -152,7 +165,7 @@ const EventList: FC<EventListProps> = ({ record, basePath }) => {
                                         />
                                     </Box>
                                 </Box>
-                                {reviewIds.length > 0 && (
+                                {reviewIds && reviewIds.length > 0 && (
                                     <Box display="flex">
                                         <Box mr="1em">
                                             <review.icon
@@ -178,22 +191,56 @@ const EventList: FC<EventListProps> = ({ record, basePath }) => {
                     </CardContent>
                 </Card>
             </Box>
-
-            {events.map(event =>
-                event.type === 'order' ? (
-                    <Order
-                        record={event.data as OrderRecord}
-                        key={`event_${event.data.id}`}
-                        basePath={basePath}
-                    />
-                ) : (
-                    <Review
-                        record={event.data as ReviewRecord}
-                        key={`review_${event.data.id}`}
-                        basePath={basePath}
-                    />
-                )
-            )}
+            <Stepper orientation="vertical" classes={{ root: classes.stepper }}>
+                {events.map(event => (
+                    <Step
+                        key={`${event.type}-${event.data.id}`}
+                        expanded
+                        active
+                        completed
+                    >
+                        <StepLabel
+                            StepIconComponent={() => {
+                                const Component =
+                                    event.type === 'order'
+                                        ? order.icon
+                                        : review.icon;
+                                return (
+                                    <Component
+                                        fontSize="small"
+                                        color="disabled"
+                                        style={{ paddingLeft: 3 }}
+                                    />
+                                );
+                            }}
+                        >
+                            {new Date(event.date).toLocaleString(locale, {
+                                weekday: 'long',
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: 'numeric',
+                                minute: 'numeric',
+                            })}
+                        </StepLabel>
+                        <StepContent>
+                            {event.type === 'order' ? (
+                                <Order
+                                    record={event.data as OrderRecord}
+                                    key={`event_${event.data.id}`}
+                                    basePath={basePath}
+                                />
+                            ) : (
+                                <Review
+                                    record={event.data as ReviewRecord}
+                                    key={`review_${event.data.id}`}
+                                    basePath={basePath}
+                                />
+                            )}
+                        </StepContent>
+                    </Step>
+                ))}
+            </Stepper>
         </>
     );
 };
@@ -205,42 +252,33 @@ interface AsideEvent {
 }
 
 const mixOrdersAndReviews = (
-    orders: RecordMap<OrderRecord>,
-    orderIds: Identifier[],
-    reviews: RecordMap<ReviewRecord>,
-    reviewIds: Identifier[]
+    orders?: RecordMap<OrderRecord>,
+    orderIds?: Identifier[],
+    reviews?: RecordMap<ReviewRecord>,
+    reviewIds?: Identifier[]
 ): AsideEvent[] => {
-    const eventsFromOrders = orderIds.map<AsideEvent>(id => ({
-        type: 'order',
-        date: orders[id].date,
-        data: orders[id],
-    }));
-    const eventsFromReviews = reviewIds.map<AsideEvent>(id => ({
-        type: 'review',
-        date: reviews[id].date,
-        data: reviews[id],
-    }));
+    const eventsFromOrders =
+        orderIds && orders
+            ? orderIds.map<AsideEvent>(id => ({
+                  type: 'order',
+                  date: orders[id].date,
+                  data: orders[id],
+              }))
+            : [];
+    const eventsFromReviews =
+        reviewIds && reviews
+            ? reviewIds.map<AsideEvent>(id => ({
+                  type: 'review',
+                  date: reviews[id].date,
+                  data: reviews[id],
+              }))
+            : [];
     const events = eventsFromOrders.concat(eventsFromReviews);
     events.sort(
-        (e1, e2) => new Date(e1.date).getTime() - new Date(e2.date).getTime()
+        (e1, e2) => new Date(e2.date).getTime() - new Date(e1.date).getTime()
     );
     return events;
 };
-
-const useEventStyles = makeStyles({
-    card: {
-        margin: '0 0 1em 1em',
-    },
-    cardHeader: {
-        alignItems: 'flex-start',
-    },
-    clamp: {
-        display: '-webkit-box',
-        '-webkit-line-clamp': 3,
-        '-webkit-box-orient': 'vertical',
-        overflow: 'hidden',
-    },
-});
 
 interface OrderProps {
     record?: OrderRecord;
@@ -249,53 +287,39 @@ interface OrderProps {
 
 const Order: FC<OrderProps> = ({ record, basePath }) => {
     const translate = useTranslate();
-    const classes = useEventStyles();
     return record ? (
-        <Card className={classes.card}>
-            <CardHeader
-                className={classes.cardHeader}
-                avatar={
-                    <Avatar
-                        aria-label={translate('resources.commands.name', {
-                            smart_count: 1,
-                        })}
-                    >
-                        <order.icon />
-                    </Avatar>
-                }
-                action={<EditButton record={record} basePath="/commands" />}
-                title={`${translate('resources.commands.name', {
-                    smart_count: 1,
-                })} #${record.reference}`}
-                subheader={
-                    <>
-                        <Typography variant="body2">{record.date}</Typography>
-                        <Typography variant="body2" color="textSecondary">
-                            {translate('resources.commands.nb_items', {
-                                smart_count: record.basket.length,
-                                _: '1 item |||| %{smart_count} items',
-                            })}
-                            &nbsp;-&nbsp;
-                            <NumberField
-                                source="total"
-                                options={{
-                                    style: 'currency',
-                                    currency: 'USD',
-                                }}
-                                record={record}
-                                basePath={basePath}
-                            />
-                            &nbsp;-&nbsp;
-                            <TextField
-                                source="status"
-                                record={record}
-                                basePath={basePath}
-                            />
-                        </Typography>
-                    </>
-                }
-            />
-        </Card>
+        <>
+            <Typography variant="body2" gutterBottom>
+                <Link to={`/commands/${record.id}`} component={RouterLink}>
+                    {translate('resources.commands.name', {
+                        smart_count: 1,
+                    })}{' '}
+                    #{record.reference}
+                </Link>
+            </Typography>
+            <Typography variant="body2" color="textSecondary">
+                {translate('resources.commands.nb_items', {
+                    smart_count: record.basket.length,
+                    _: '1 item |||| %{smart_count} items',
+                })}
+                &nbsp;-&nbsp;
+                <NumberField
+                    source="total"
+                    options={{
+                        style: 'currency',
+                        currency: 'USD',
+                    }}
+                    record={record}
+                    basePath={basePath}
+                />
+                &nbsp;-&nbsp;
+                <TextField
+                    source="status"
+                    record={record}
+                    basePath={basePath}
+                />
+            </Typography>
+        </>
     ) : null;
 };
 
@@ -304,65 +328,48 @@ interface ReviewProps {
     basePath?: string;
 }
 
+const useReviewStyles = makeStyles({
+    clamp: {
+        display: '-webkit-box',
+        '-webkit-line-clamp': 3,
+        '-webkit-box-orient': 'vertical',
+        overflow: 'hidden',
+    },
+});
+
 const Review: FC<ReviewProps> = ({ record, basePath }) => {
+    const classes = useReviewStyles();
     const translate = useTranslate();
-    const classes = useEventStyles();
     return record ? (
-        <Card className={classes.card}>
-            <CardHeader
-                className={classes.cardHeader}
-                avatar={
-                    <Avatar
-                        aria-label={translate('resources.reviews.name', {
-                            smart_count: 1,
-                        })}
+        <>
+            <Typography variant="body2" gutterBottom>
+                <Link to={`/reviews/${record.id}`} component={RouterLink}>
+                    {translate('resources.reviews.relative_to_poster')} "
+                    <ReferenceField
+                        source="product_id"
+                        reference="products"
+                        resource="reviews"
+                        record={record}
+                        basePath={basePath}
+                        link={false}
                     >
-                        <review.icon />
-                    </Avatar>
-                }
-                action={<EditButton record={record} basePath="/reviews" />}
-                title={
-                    <span>
-                        {translate('resources.reviews.relative_to_poster')}{' '}
-                        <ProductReferenceField
-                            resource="reviews"
-                            record={record}
-                            basePath={basePath}
-                        />
-                    </span>
-                }
-                subheader={
-                    <>
-                        <Typography variant="body2">{record.date}</Typography>
-                        <StarRatingField record={record} />
-                        <Typography variant="inherit" className={classes.clamp}>
-                            {record.comment}
-                        </Typography>
-                    </>
-                }
-            />
-        </Card>
-    ) : null;
-};
-
-interface EditButtonProps {
-    record?: Record;
-    basePath?: string;
-}
-
-const EditButton: FC<EditButtonProps> = ({ record, basePath }) => {
-    const translate = useTranslate();
-    return (
-        <Tooltip title={translate('ra.action.edit')}>
-            <IconButton
-                aria-label={translate('ra.action.edit')}
-                component={Link}
-                to={linkToRecord(basePath, record && record.id)}
+                        <TextField source="reference" component="span" />
+                    </ReferenceField>
+                    "
+                </Link>
+            </Typography>
+            <Typography variant="body2" color="textSecondary" gutterBottom>
+                <StarRatingField record={record} />
+            </Typography>
+            <Typography
+                variant="body2"
+                color="textSecondary"
+                className={classes.clamp}
             >
-                <ContentCreate />
-            </IconButton>
-        </Tooltip>
-    );
+                {record.comment}
+            </Typography>
+        </>
+    ) : null;
 };
 
 export default Aside;

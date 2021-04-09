@@ -2,8 +2,10 @@ import { useCallback } from 'react';
 import merge from 'lodash/merge';
 
 import { useSafeSetState } from '../util/hooks';
+import { MutationMode, OnSuccess, OnFailure } from '../types';
 import useDataProvider from './useDataProvider';
 import useDataProviderWithDeclarativeSideEffects from './useDataProviderWithDeclarativeSideEffects';
+import { DeclarativeSideEffect } from './useDeclarativeSideEffects';
 
 /**
  * Get a callback to fetch the data provider through Redux, usually for mutations.
@@ -22,7 +24,7 @@ import useDataProviderWithDeclarativeSideEffects from './useDataProviderWithDecl
  *
  * - both, in which case the definition and call time parameters are merged
  *
- *       const [mutate] = useMutation(query1, options1); mutate(query2, options2));
+ *       const [mutate] = useMutation(query1, options1); mutate(query2, options2);
  *
  * @param {Object} query
  * @param {string} query.type The method called on the data provider, e.g. 'getList', 'getOne'. Can also be a custom method if the dataProvider supports is.
@@ -31,9 +33,10 @@ import useDataProviderWithDeclarativeSideEffects from './useDataProviderWithDecl
  * @param {Object} options
  * @param {string} options.action Redux action type
  * @param {boolean} options.undoable Set to true to run the mutation locally before calling the dataProvider
- * @param {Function} options.onSuccess Side effect function to be executed upon success of failure, e.g. { onSuccess: response => refresh() } }
- * @param {Function} options.onFailure Side effect function to be executed upon failure, e.g. { onFailure: error => notify(error.message) } }
- * @param {boolean} options.withDeclarativeSideEffectsSupport Set to true to support legacy side effects (e.g. { onSuccess: { refresh: true } })
+ * @param {boolean} options.returnPromise Set to true to return the result promise of the mutation
+ * @param {Function} options.onSuccess Side effect function to be executed upon success, e.g. () => refresh()
+ * @param {Function} options.onFailure Side effect function to be executed upon failure, e.g. (error) => notify(error.message)
+ * @param {boolean} options.withDeclarativeSideEffectsSupport Set to true to support legacy side effects e.g. { onSuccess: { refresh: true } }
  *
  * @returns A tuple with the mutation callback and the request state. Destructure as [mutate, { data, total, error, loading, loaded }].
  *
@@ -52,9 +55,10 @@ import useDataProviderWithDeclarativeSideEffects from './useDataProviderWithDecl
  * - {Object} options
  * - {string} options.action Redux action type
  * - {boolean} options.undoable Set to true to run the mutation locally before calling the dataProvider
- * - {Function} options.onSuccess Side effect function to be executed upon success of failure, e.g. { onSuccess: response => refresh() } }
- * - {Function} options.onFailure Side effect function to be executed upon failure, e.g. { onFailure: error => notify(error.message) } }
- * - {boolean} withDeclarativeSideEffectsSupport Set to true to support legacy side effects (e.g. { onSuccess: { refresh: true } })
+ * - {boolean} options.returnPromise Set to true to return the result promise of the mutation
+ * - {Function} options.onSuccess Side effect function to be executed upon success or failure, e.g. { onSuccess: response => refresh() }
+ * - {Function} options.onFailure Side effect function to be executed upon failure, e.g. { onFailure: error => notify(error.message) }
+ * - {boolean} withDeclarativeSideEffectsSupport Set to true to support legacy side effects e.g. { onSuccess: { refresh: true } }
  *
  * @example
  *
@@ -140,7 +144,7 @@ const useMutation = (
         (
             callTimeQuery?: Mutation | Event,
             callTimeOptions?: MutationOptions
-        ): void => {
+        ): void | Promise<any> => {
             const finalDataProvider = hasDeclarativeSideEffectsSupport(
                 options,
                 callTimeOptions
@@ -156,26 +160,44 @@ const useMutation = (
 
             setState(prevState => ({ ...prevState, loading: true }));
 
-            finalDataProvider[params.type](
-                params.resource,
-                params.payload,
-                params.options
-            )
-                .then(({ data, total }) => {
+            const returnPromise = params.options.returnPromise;
+
+            const promise = finalDataProvider[params.type]
+                .apply(
+                    finalDataProvider,
+                    typeof params.resource !== 'undefined'
+                        ? [params.resource, params.payload, params.options]
+                        : [params.payload, params.options]
+                )
+                .then(response => {
+                    const { data, total } = response;
                     setState({
                         data,
-                        total,
-                        loading: false,
+                        error: null,
                         loaded: true,
+                        loading: false,
+                        total,
                     });
+                    if (returnPromise) {
+                        return response;
+                    }
                 })
                 .catch(errorFromResponse => {
                     setState({
+                        data: null,
                         error: errorFromResponse,
-                        loading: false,
                         loaded: false,
+                        loading: false,
+                        total: null,
                     });
+                    if (returnPromise) {
+                        throw errorFromResponse;
+                    }
                 });
+
+            if (returnPromise) {
+                return promise;
+            }
         },
         [
             // deep equality, see https://github.com/facebook/react/issues/14476#issuecomment-471199055
@@ -192,20 +214,26 @@ const useMutation = (
 
 export interface Mutation {
     type: string;
-    resource: string;
+    resource?: string;
     payload: object;
 }
 
 export interface MutationOptions {
     action?: string;
-    undoable?: boolean;
-    onSuccess?: (response: any) => any | Object;
-    onFailure?: (error?: any) => any | Object;
+    returnPromise?: boolean;
+    onSuccess?: OnSuccess | DeclarativeSideEffect;
+    onFailure?: OnFailure | DeclarativeSideEffect;
     withDeclarativeSideEffectsSupport?: boolean;
+    /** @deprecated use mutationMode: undoable instead */
+    undoable?: boolean;
+    mutationMode?: MutationMode;
 }
 
 export type UseMutationValue = [
-    (query?: Partial<Mutation>, options?: Partial<MutationOptions>) => void,
+    (
+        query?: Partial<Mutation>,
+        options?: Partial<MutationOptions>
+    ) => void | Promise<any>,
     {
         data?: any;
         total?: number;
@@ -220,13 +248,13 @@ export type UseMutationValue = [
  *
  * useMutation() parameters can be passed:
  * - at definition time (e.g. useMutation({ type: 'update', resource: 'posts', payload: { id: 1, data: { title: '' } } }) )
- * - at call time (e.g [mutate] = useMutation(); mutate({ type: 'update', resource: 'posts', payload: { id: 1, data: { title: '' } } }))
+ * - at call time (e.g. [mutate] = useMutation(); mutate({ type: 'update', resource: 'posts', payload: { id: 1, data: { title: '' } } }))
  * - both
  *
  * This function merges the definition time and call time parameters.
  *
  * This is useful because useMutation() is used by higher-level hooks like
- * useCreate() or useUpade(), and these hooks can be called both ways.
+ * useCreate() or useUpdate(), and these hooks can be called both ways.
  * So it makes sense to make useMutation() capable of handling both call types
  * as it avoids repetition higher in the hook chain.
  *
@@ -299,9 +327,9 @@ const hasDeclarativeSideEffectsSupport = (
 };
 
 const sanitizeOptions = (args?: MutationOptions) => {
-    if (!args) return {};
+    if (!args) return { onSuccess: undefined };
     const { withDeclarativeSideEffectsSupport, ...options } = args;
-    return options;
+    return { onSuccess: undefined, ...options };
 };
 
 export default useMutation;

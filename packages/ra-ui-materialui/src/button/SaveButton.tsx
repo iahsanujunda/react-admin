@@ -1,10 +1,4 @@
-import React, {
-    useContext,
-    cloneElement,
-    FC,
-    ReactElement,
-    SyntheticEvent,
-} from 'react';
+import React, { cloneElement, FC, ReactElement, SyntheticEvent } from 'react';
 import PropTypes from 'prop-types';
 import Button, { ButtonProps } from '@material-ui/core/Button';
 import CircularProgress from '@material-ui/core/CircularProgress';
@@ -15,23 +9,25 @@ import {
     useTranslate,
     useNotify,
     RedirectionSideEffect,
-    SideEffectContext,
     OnSuccess,
     OnFailure,
     TransformData,
     Record,
-    FormContext,
+    HandleSubmitWithRedirect,
+    useSaveContext,
+    useFormContext,
 } from 'ra-core';
 
 import { sanitizeButtonRestProps } from './Button';
+import { FormRenderProps } from 'react-final-form';
 
 /**
  * Submit button for resource forms (Edit and Create).
  *
- * @typedef {Object} Props the props you can use (other props are injected by Toolbar)
+ * @typedef {Object} Props the props you can use (other props are injected by the <Toolbar>)
  * @prop {string} className
  * @prop {string} label Button label. Defaults to 'ra.action.save', translated.
- * @prop {boolean} disabled Injected by SimpleForm, which disables the SaveButton when it's pristine
+ * @prop {boolean} disabled Disable the button.
  * @prop {string} variant Material-ui variant for the button. Defaults to 'contained'.
  * @prop {ReactElement} icon
  * @prop {string|boolean} redirect Override of the default redirect in case of success. Can be 'list', 'show', 'edit' (for create views), or false (to stay on the creation form).
@@ -40,7 +36,7 @@ import { sanitizeButtonRestProps } from './Button';
  * @prop {function} onFailure Callback to execute instead of the default error side effects. Receives the dataProvider error response as argument.
  * @prop {function} transform Callback to execute before calling the dataProvider. Receives the data from the form, must return that transformed data. Can be asynchronous (and return a Promise)
  *
- * @param {Prop} props
+ * @param {Props} props
  *
  * @example // with custom redirection
  *
@@ -69,7 +65,6 @@ const SaveButton: FC<SaveButtonProps> = props => {
         invalid,
         label = 'ra.action.save',
         disabled,
-        pristine,
         redirect,
         saving,
         submitOnEnter,
@@ -86,23 +81,39 @@ const SaveButton: FC<SaveButtonProps> = props => {
     const classes = useStyles(props);
     const notify = useNotify();
     const translate = useTranslate();
-    const { setOnSave } = useContext(FormContext);
-    const { setOnSuccess, setOnFailure, setTransform } = useContext(
-        SideEffectContext
-    );
+    const formContext = useFormContext();
+    const { setOnSuccess, setOnFailure, setTransform } = useSaveContext(props);
 
     const handleClick = event => {
         // deprecated: use onSuccess and transform instead of onSave
         if (typeof onSave === 'function') {
             if (process.env.NODE_ENV !== 'production') {
-                console.log(
+                console.warn(
                     '<SaveButton onSave> prop is deprecated, use the onSuccess prop instead.'
                 );
+                if (!formContext || !formContext.setOnSave) {
+                    console.warn(
+                        'Using <SaveButton> outside a FormContext is deprecated.'
+                    );
+                }
             }
-            setOnSave(onSave);
+            if (formContext && formContext.setOnSave) {
+                formContext.setOnSave(onSave);
+            }
         } else {
-            // we reset to the Form default save function
-            setOnSave();
+            if (
+                process.env.NODE_ENV !== 'production' &&
+                (!formContext || !formContext.setOnSave)
+            ) {
+                console.warn(
+                    'Using <SaveButton> outside a FormContext is deprecated.'
+                );
+            }
+
+            if (formContext && formContext.setOnSave) {
+                // we reset to the Form default save function
+                formContext.setOnSave();
+            }
         }
         if (onSuccess) {
             setOnSuccess(onSuccess);
@@ -142,7 +153,7 @@ const SaveButton: FC<SaveButtonProps> = props => {
             onClick={handleClick}
             color={saving ? 'default' : 'primary'}
             aria-label={displayedLabel}
-            disabled={disabled || pristine}
+            disabled={disabled}
             {...sanitizeButtonRestProps(rest)}
         >
             {saving ? (
@@ -181,7 +192,9 @@ const useStyles = makeStyles(
 interface Props {
     classes?: object;
     className?: string;
-    handleSubmitWithRedirect?: (redirect?: RedirectionSideEffect) => void;
+    handleSubmitWithRedirect?:
+        | HandleSubmitWithRedirect
+        | FormRenderProps['handleSubmit'];
     // @deprecated
     onSave?: (values: object, redirect: RedirectionSideEffect) => void;
     onSuccess?: OnSuccess;
@@ -191,7 +204,7 @@ interface Props {
     invalid?: boolean;
     label?: string;
     onClick?: () => void;
-    pristine?: boolean;
+    disabled?: boolean;
     redirect?: RedirectionSideEffect;
     saving?: boolean;
     submitOnEnter?: boolean;
@@ -204,7 +217,7 @@ interface Props {
     undoable?: boolean;
 }
 
-type SaveButtonProps = Props & ButtonProps;
+export type SaveButtonProps = Props & ButtonProps;
 
 SaveButton.propTypes = {
     className: PropTypes.string,
@@ -214,7 +227,6 @@ SaveButton.propTypes = {
     onSave: PropTypes.func,
     invalid: PropTypes.bool,
     label: PropTypes.string,
-    pristine: PropTypes.bool,
     redirect: PropTypes.oneOfType([
         PropTypes.string,
         PropTypes.bool,

@@ -1,11 +1,11 @@
 import * as React from 'react';
 import expect from 'expect';
-import { render, cleanup } from '@testing-library/react';
+import { render } from '@testing-library/react';
+import { RecordContextProvider } from 'ra-core';
+
 import DateField from './DateField';
 
 describe('<DateField />', () => {
-    afterEach(cleanup);
-
     it('should return null when the record is not set', () => {
         const { container } = render(<DateField source="foo" />);
         expect(container.firstChild).toBeNull();
@@ -25,6 +25,19 @@ describe('<DateField />', () => {
                 source="foo"
                 locales="en-US"
             />
+        );
+
+        const date = new Date('2017-04-23').toLocaleDateString('en-US');
+        expect(queryByText(date)).not.toBeNull();
+    });
+
+    it('should use record from RecordContext', () => {
+        const { queryByText } = render(
+            <RecordContextProvider
+                value={{ id: 123, foo: new Date('2017-04-23') }}
+            >
+                <DateField source="foo" locales="en-US" />
+            </RecordContextProvider>
         );
 
         const date = new Date('2017-04-23').toLocaleDateString('en-US');

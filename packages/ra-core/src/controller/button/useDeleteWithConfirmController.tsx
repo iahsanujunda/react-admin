@@ -12,7 +12,8 @@ import {
     useRedirect,
     RedirectionSideEffect,
 } from '../../sideEffect';
-import { Record } from '../../types';
+import { Record, MutationMode, OnFailure, OnSuccess } from '../../types';
+import { useResourceContext } from '../../core';
 
 /**
  * Prepare a set of callbacks for a delete button guarded by confirmation dialog
@@ -66,35 +67,58 @@ import { Record } from '../../types';
  *     );
  * };
  */
-const useDeleteWithConfirmController = ({
-    resource,
-    record,
-    redirect: redirectTo,
-    basePath,
-    onClick,
-}: UseDeleteWithConfirmControllerParams): UseDeleteWithConfirmControllerReturn => {
+const useDeleteWithConfirmController = (
+    props: UseDeleteWithConfirmControllerParams
+): UseDeleteWithConfirmControllerReturn => {
+    const {
+        record,
+        redirect: redirectTo,
+        basePath,
+        mutationMode,
+        onClick,
+        onSuccess,
+        onFailure,
+    } = props;
+    const resource = useResourceContext(props);
     const [open, setOpen] = useState(false);
     const notify = useNotify();
     const redirect = useRedirect();
     const refresh = useRefresh();
     const [deleteOne, { loading }] = useDelete(resource, null, null, {
         action: CRUD_DELETE,
-        onSuccess: () => {
+        onSuccess: response => {
             setOpen(false);
-            notify('ra.notification.deleted', 'info', { smart_count: 1 });
-            redirect(redirectTo, basePath);
-            refresh();
+            if (onSuccess === undefined) {
+                notify('ra.notification.deleted', 'info', { smart_count: 1 });
+                redirect(redirectTo, basePath || `/${resource}`);
+                refresh();
+            } else {
+                onSuccess(response);
+            }
         },
         onFailure: error => {
             setOpen(false);
-            notify(
-                typeof error === 'string'
-                    ? error
-                    : error.message || 'ra.notification.http_error',
-                'warning'
-            );
+            if (onFailure === undefined) {
+                notify(
+                    typeof error === 'string'
+                        ? error
+                        : error.message || 'ra.notification.http_error',
+                    'warning',
+                    {
+                        _:
+                            typeof error === 'string'
+                                ? error
+                                : error && error.message
+                                ? error.message
+                                : undefined,
+                    }
+                );
+                refresh();
+            } else {
+                onFailure(error);
+            }
         },
-        undoable: false,
+        mutationMode,
     });
 
     const handleDialogOpen = e => {
@@ -109,6 +133,7 @@ const useDeleteWithConfirmController = ({
 
     const handleDelete = useCallback(
         event => {
+            event.stopPropagation();
             deleteOne({
                 payload: { id: record.id, previousData: record },
             });
@@ -124,10 +149,14 @@ const useDeleteWithConfirmController = ({
 
 export interface UseDeleteWithConfirmControllerParams {
     basePath?: string;
+    mutationMode?: MutationMode;
     record?: Record;
     redirect?: RedirectionSideEffect;
-    resource: string;
+    // @deprecated. This hook get the resource from the context
+    resource?: string;
     onClick?: ReactEventHandler<any>;
+    onSuccess?: OnSuccess;
+    onFailure?: OnFailure;
 }
 
 export interface UseDeleteWithConfirmControllerReturn {

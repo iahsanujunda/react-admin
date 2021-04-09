@@ -94,6 +94,7 @@ const Admin: FunctionComponent<AdminProps> = ({
     customSagas,
     dashboard,
     dataProvider,
+    disableTelemetry,
     history,
     i18nProvider,
     initialState,
@@ -103,6 +104,7 @@ const Admin: FunctionComponent<AdminProps> = ({
     loginPage,
     logoutButton,
     menu, // deprecated, use a custom layout instead
+    ready,
     theme,
     title = 'React Admin',
 }) => {
@@ -136,6 +138,7 @@ const Admin: FunctionComponent<AdminProps> = ({
                 layout={appLayout || layout}
                 customRoutes={customRoutes}
                 dashboard={dashboard}
+                disableTelemetry={disableTelemetry}
                 menu={menu}
                 catchAll={catchAll}
                 theme={theme}
@@ -143,6 +146,7 @@ const Admin: FunctionComponent<AdminProps> = ({
                 loading={loading}
                 loginPage={loginPage}
                 logout={authProvider ? logoutButton : undefined}
+                ready={ready}
             >
                 {children}
             </AdminUI>

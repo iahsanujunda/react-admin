@@ -1,9 +1,8 @@
 import * as React from 'react';
-import { cleanup } from '@testing-library/react';
 import expect from 'expect';
 
 import ReferenceFieldController from './ReferenceFieldController';
-import renderWithRedux from '../../util/renderWithRedux';
+import { renderWithRedux } from 'ra-test';
 import { DataProviderContext } from '../../dataProvider';
 
 const defaultState = {
@@ -13,7 +12,6 @@ const defaultState = {
 };
 
 describe('<ReferenceFieldController />', () => {
-    afterEach(cleanup);
     it('should call the CRUD_GET_MANY action on mount if reference source is defined', async () => {
         const dataProvider = {
             getMany: jest.fn(() =>

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import expect from 'expect';
-import { render, cleanup, fireEvent } from '@testing-library/react';
+import { render, fireEvent } from '@testing-library/react';
 import { Form } from 'react-final-form';
 import { TestTranslationProvider } from 'ra-core';
 
@@ -16,8 +16,6 @@ describe('<SelectArrayInput />', () => {
             { id: 'photography', name: 'Photography' },
         ],
     };
-
-    afterEach(cleanup);
 
     it('should use a mui Select', () => {
         const { queryByTestId } = render(
@@ -173,6 +171,29 @@ describe('<SelectArrayInput />', () => {
         expect(queryByText('Programming')).not.toBeNull();
     });
 
+    it('should render disable choices marked so', () => {
+        const { getByRole, getByText } = render(
+            <Form
+                onSubmit={jest.fn()}
+                render={() => (
+                    <SelectArrayInput
+                        {...defaultProps}
+                        choices={[
+                            { id: 'ang', name: 'Angular' },
+                            { id: 'rea', name: 'React', disabled: true },
+                        ]}
+                    />
+                )}
+            />
+        );
+        const select = getByRole('button');
+        fireEvent.mouseDown(select);
+        const option1 = getByText('Angular');
+        expect(option1.getAttribute('aria-disabled')).toEqual('false');
+
+        const option2 = getByText('React');
+        expect(option2.getAttribute('aria-disabled')).toEqual('true');
+    });
     it('should translate the choices', () => {
         const { getByRole, queryByText } = render(
             <TestTranslationProvider translate={x => `**${x}**`}>
@@ -233,6 +254,66 @@ describe('<SelectArrayInput />', () => {
                 />
             );
             expect(queryByText('Required field.')).toBeDefined();
+        });
+
+        it('should not render a LinearProgress if loading is true and a second has not passed yet', () => {
+            const { queryByRole } = render(
+                <Form
+                    validateOnBlur
+                    onSubmit={jest.fn()}
+                    render={() => (
+                        <SelectArrayInput
+                            {...{
+                                ...defaultProps,
+                                loaded: true,
+                                loading: true,
+                            }}
+                        />
+                    )}
+                />
+            );
+
+            expect(queryByRole('progressbar')).toBeNull();
+        });
+
+        it('should render a LinearProgress if loading is true and a second has passed', async () => {
+            const { queryByRole } = render(
+                <Form
+                    validateOnBlur
+                    onSubmit={jest.fn()}
+                    render={() => (
+                        <SelectArrayInput
+                            {...{
+                                ...defaultProps,
+                                loaded: true,
+                                loading: true,
+                            }}
+                        />
+                    )}
+                />
+            );
+
+            await new Promise(resolve => setTimeout(resolve, 1001));
+
+            expect(queryByRole('progressbar')).not.toBeNull();
+        });
+
+        it('should not render a LinearProgress if loading is false', () => {
+            const { queryByRole } = render(
+                <Form
+                    validateOnBlur
+                    onSubmit={jest.fn()}
+                    render={() => (
+                        <SelectArrayInput
+                            {...{
+                                ...defaultProps,
+                            }}
+                        />
+                    )}
+                />
+            );
+
+            expect(queryByRole('progressbar')).toBeNull();
         });
     });
 });

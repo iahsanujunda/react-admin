@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Children, cloneElement, FC } from 'react';
+import { Children, cloneElement, ReactElement } from 'react';
 import PropTypes from 'prop-types';
 import Card from '@material-ui/core/Card';
 import classnames from 'classnames';
@@ -15,14 +15,14 @@ import {
 
 import Title, { TitlePropType } from '../layout/Title';
 import ListToolbar from './ListToolbar';
-import DefaultPagination from './Pagination';
+import DefaultPagination from './pagination/Pagination';
 import BulkDeleteButton from '../button/BulkDeleteButton';
 import BulkActionsToolbar from './BulkActionsToolbar';
 import DefaultActions from './ListActions';
 import Empty from './Empty';
 import { ListProps } from '../types';
 
-export const ListView: FC<ListViewProps> = props => {
+export const ListView = (props: ListViewProps) => {
     const {
         actions,
         aside,
@@ -46,7 +46,6 @@ export const ListView: FC<ListViewProps> = props => {
         total,
         loaded,
         loading,
-        hasCreate,
         filterValues,
         selectedIds,
     } = listContext;
@@ -88,11 +87,7 @@ export const ListView: FC<ListViewProps> = props => {
     );
 
     const shouldRenderEmptyPage =
-        hasCreate &&
-        loaded &&
-        !loading &&
-        !total &&
-        !Object.keys(filterValues).length;
+        loaded && !loading && total === 0 && !Object.keys(filterValues).length;
 
     return (
         <div
@@ -100,7 +95,7 @@ export const ListView: FC<ListViewProps> = props => {
             {...sanitizeRestProps(rest)}
         >
             <Title title={title} defaultTitle={defaultTitle} />
-            {shouldRenderEmptyPage
+            {shouldRenderEmptyPage && empty !== false
                 ? cloneElement(empty, listContext)
                 : renderList()}
         </div>
@@ -199,7 +194,9 @@ const useStyles = makeStyles(
 
 export interface ListViewProps
     extends Omit<ListProps, 'basePath' | 'hasCreate' | 'perPage' | 'resource'>,
-        ListControllerProps {}
+        ListControllerProps {
+    children: ReactElement;
+}
 
 const sanitizeRestProps: (
     props: Omit<
@@ -219,40 +216,41 @@ const sanitizeRestProps: (
         | 'empty'
     >
 ) => any = ({
-    basePath,
-    currentSort,
-    data,
-    defaultTitle,
-    displayedFilters,
-    filterDefaultValues,
-    filterValues,
-    hasCreate,
-    hasEdit,
-    hasList,
-    hasShow,
-    hideFilter,
-    history,
-    ids,
-    loading,
-    loaded,
-    location,
-    match,
-    onSelect,
-    onToggleItem,
-    onUnselectItems,
-    options,
-    page,
-    permissions,
-    perPage,
-    resource,
-    selectedIds,
-    setFilters,
-    setPage,
-    setPerPage,
-    setSort,
-    showFilter,
-    sort,
-    total,
+    basePath = null,
+    currentSort = null,
+    data = null,
+    defaultTitle = null,
+    displayedFilters = null,
+    filterDefaultValues = null,
+    filterValues = null,
+    hasCreate = null,
+    hasEdit = null,
+    hasList = null,
+    hasShow = null,
+    hideFilter = null,
+    history = null,
+    ids = null,
+    loading = null,
+    loaded = null,
+    location = null,
+    match = null,
+    onSelect = null,
+    onToggleItem = null,
+    onUnselectItems = null,
+    options = null,
+    page = null,
+    permissions = null,
+    perPage = null,
+    resource = null,
+    selectedIds = null,
+    setFilters = null,
+    setPage = null,
+    setPerPage = null,
+    setSort = null,
+    showFilter = null,
+    syncWithLocation = null,
+    sort = null,
+    total = null,
     ...rest
 }) => rest;
 

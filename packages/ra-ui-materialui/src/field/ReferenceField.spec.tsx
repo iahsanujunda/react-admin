@@ -1,28 +1,52 @@
 import * as React from 'react';
 import expect from 'expect';
-import { render, cleanup } from '@testing-library/react';
+import { render, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { renderWithRedux, DataProviderContext } from 'ra-core';
+import { DataProviderContext, RecordContextProvider } from 'ra-core';
+import { renderWithRedux } from 'ra-test';
 
 import ReferenceField, { ReferenceFieldView } from './ReferenceField';
 import TextField from './TextField';
 
 describe('<ReferenceField />', () => {
-    afterEach(cleanup);
+    const record = { id: 123, postId: 123 };
 
     describe('Progress bar', () => {
-        it('should display a loader on mount if the reference is not in the store', () => {
+        it("should not display a loader on mount if the reference is not in the store and a second hasn't passed yet", async () => {
             const { queryByRole, container } = renderWithRedux(
-                <ReferenceField
-                    record={{ id: 123, postId: 123 }}
+                <ReferenceFieldView
+                    record={record}
                     resource="comments"
                     source="postId"
                     reference="posts"
                     basePath="/comments"
+                    loaded={false}
+                    loading={true}
                 >
                     <TextField source="title" />
-                </ReferenceField>
+                </ReferenceFieldView>
             );
+            await new Promise(resolve => setTimeout(resolve, 500));
+            expect(queryByRole('progressbar')).toBeNull();
+            const links = container.getElementsByTagName('a');
+            expect(links).toHaveLength(0);
+        });
+
+        it('should display a loader on mount if the reference is not in the store and a second has passed', async () => {
+            const { queryByRole, container } = renderWithRedux(
+                <ReferenceFieldView
+                    record={record}
+                    resource="comments"
+                    source="postId"
+                    reference="posts"
+                    basePath="/comments"
+                    loaded={false}
+                    loading={true}
+                >
+                    <TextField source="title" />
+                </ReferenceFieldView>
+            );
+            await new Promise(resolve => setTimeout(resolve, 1001));
             expect(queryByRole('progressbar')).not.toBeNull();
             const links = container.getElementsByTagName('a');
             expect(links).toHaveLength(0);
@@ -32,7 +56,7 @@ describe('<ReferenceField />', () => {
             const { queryByRole, container } = renderWithRedux(
                 <MemoryRouter>
                     <ReferenceField
-                        record={{ id: 123, postId: 123 }}
+                        record={record}
                         resource="comments"
                         source="postId"
                         reference="posts"
@@ -67,7 +91,7 @@ describe('<ReferenceField />', () => {
                 <DataProviderContext.Provider value={dataProvider}>
                     <MemoryRouter>
                         <ReferenceField
-                            record={{ id: 123, postId: 123 }}
+                            record={record}
                             resource="comments"
                             source="postId"
                             reference="posts"
@@ -99,7 +123,7 @@ describe('<ReferenceField />', () => {
                 // @ts-ignore-line
                 <DataProviderContext.Provider value={dataProvider}>
                     <ReferenceField
-                        record={{ id: 123, postId: 123 }}
+                        record={record}
                         resource="comments"
                         source="postId"
                         reference="posts"
@@ -124,7 +148,7 @@ describe('<ReferenceField />', () => {
                 // @ts-ignore-line
                 <DataProviderContext.Provider value={dataProvider}>
                     <ReferenceField
-                        record={{ id: 123, postId: 123 }}
+                        record={record}
                         resource="comments"
                         source="postId"
                         reference="posts"
@@ -141,11 +165,27 @@ describe('<ReferenceField />', () => {
         });
     });
 
+    it('should display the emptyText if the field is empty', () => {
+        const { getByText } = renderWithRedux(
+            <ReferenceField
+                record={{ id: 123 }}
+                resource="comments"
+                source="postId"
+                reference="posts"
+                basePath="/comments"
+                emptyText="EMPTY"
+            >
+                <TextField source="title" />
+            </ReferenceField>
+        );
+        expect(getByText('EMPTY')).not.toBeNull();
+    });
+
     it('should use the reference from the store if available', () => {
         const { container, getByText } = renderWithRedux(
             <MemoryRouter>
                 <ReferenceField
-                    record={{ id: 123, postId: 123 }}
+                    record={record}
                     resource="comments"
                     source="postId"
                     reference="posts"
@@ -164,7 +204,37 @@ describe('<ReferenceField />', () => {
                 },
             }
         );
-        expect(getByText('hello')).toBeDefined();
+        expect(getByText('hello')).not.toBeNull();
+        const links = container.getElementsByTagName('a');
+        expect(links).toHaveLength(1);
+        expect(links.item(0).href).toBe('http://localhost/posts/123');
+    });
+
+    it('should use record from RecordContext', () => {
+        const { container, getByText } = renderWithRedux(
+            <MemoryRouter>
+                <RecordContextProvider value={record}>
+                    <ReferenceField
+                        resource="comments"
+                        source="postId"
+                        reference="posts"
+                        basePath="/comments"
+                    >
+                        <TextField source="title" />
+                    </ReferenceField>
+                </RecordContextProvider>
+            </MemoryRouter>,
+            {
+                admin: {
+                    resources: {
+                        posts: {
+                            data: { 123: { id: 123, title: 'hello' } },
+                        },
+                    },
+                },
+            }
+        );
+        expect(getByText('hello')).not.toBeNull();
         const links = container.getElementsByTagName('a');
         expect(links).toHaveLength(1);
         expect(links.item(0).href).toBe('http://localhost/posts/123');
@@ -181,7 +251,7 @@ describe('<ReferenceField />', () => {
             <DataProviderContext.Provider value={dataProvider}>
                 <MemoryRouter>
                     <ReferenceField
-                        record={{ id: 123, postId: 123 }}
+                        record={record}
                         resource="comments"
                         source="postId"
                         reference="posts"
@@ -192,10 +262,11 @@ describe('<ReferenceField />', () => {
                 </MemoryRouter>
             </DataProviderContext.Provider>
         );
-        await new Promise(resolve => setTimeout(resolve, 10));
-        const action = dispatch.mock.calls[0][0];
-        expect(action.type).toBe('RA/CRUD_GET_MANY');
-        expect(action.payload).toEqual({ ids: [123] });
+        await waitFor(() => {
+            const action = dispatch.mock.calls[0][0];
+            expect(action.type).toBe('RA/CRUD_GET_MANY');
+            expect(action.payload).toEqual({ ids: [123] });
+        });
     });
 
     it('should display an error icon if the dataProvider call fails', async () => {
@@ -207,7 +278,7 @@ describe('<ReferenceField />', () => {
             // @ts-ignore-line
             <DataProviderContext.Provider value={dataProvider}>
                 <ReferenceField
-                    record={{ id: 123, postId: 123 }}
+                    record={record}
                     resource="comments"
                     source="postId"
                     reference="posts"
@@ -217,10 +288,11 @@ describe('<ReferenceField />', () => {
                 </ReferenceField>
             </DataProviderContext.Provider>
         );
-        await new Promise(resolve => setTimeout(resolve, 10));
-        const ErrorIcon = getByRole('presentation');
-        expect(ErrorIcon).toBeDefined();
-        expect(ErrorIcon.getAttribute('aria-errormessage')).toBe('boo');
+        await waitFor(() => {
+            const ErrorIcon = getByRole('presentation', { hidden: true });
+            expect(ErrorIcon).toBeDefined();
+            expect(ErrorIcon.getAttribute('aria-errormessage')).toBe('boo');
+        });
     });
 
     describe('ReferenceFieldView', () => {
@@ -228,7 +300,7 @@ describe('<ReferenceField />', () => {
             const { container } = render(
                 <MemoryRouter>
                     <ReferenceFieldView
-                        record={{ id: 123, postId: 123 }}
+                        record={record}
                         source="postId"
                         referenceRecord={{ id: 123, title: 'foo' }}
                         reference="posts"
@@ -250,7 +322,7 @@ describe('<ReferenceField />', () => {
         it('should render no link when resourceLinkPath is not specified', () => {
             const { container } = render(
                 <ReferenceFieldView
-                    record={{ id: 123, fooId: 123 }}
+                    record={record}
                     source="fooId"
                     referenceRecord={{ id: 123, title: 'foo' }}
                     reference="bar"
@@ -264,6 +336,28 @@ describe('<ReferenceField />', () => {
             );
             const links = container.getElementsByTagName('a');
             expect(links).toHaveLength(0);
+        });
+
+        it('should work without basePath', () => {
+            const { container } = render(
+                <MemoryRouter>
+                    <ReferenceFieldView
+                        record={record}
+                        source="postId"
+                        referenceRecord={{ id: 123, title: 'foo' }}
+                        reference="posts"
+                        resource="comments"
+                        resourceLinkPath="/posts/123"
+                        loaded={true}
+                        loading={false}
+                    >
+                        <TextField source="title" />
+                    </ReferenceFieldView>
+                </MemoryRouter>
+            );
+            const links = container.getElementsByTagName('a');
+            expect(links).toHaveLength(1);
+            expect(links.item(0).href).toBe('http://localhost/posts/123');
         });
     });
 });

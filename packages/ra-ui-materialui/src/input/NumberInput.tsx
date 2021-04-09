@@ -5,19 +5,13 @@ import TextField, { TextFieldProps } from '@material-ui/core/TextField';
 import { useInput, FieldTitle, InputProps } from 'ra-core';
 
 import InputHelperText from './InputHelperText';
-import sanitizeRestProps from './sanitizeRestProps';
+import sanitizeInputRestProps from './sanitizeInputRestProps';
 
 const convertStringToNumber = value => {
     const float = parseFloat(value);
 
     return isNaN(float) ? null : float;
 };
-
-interface Props {
-    step?: string | number;
-    min?: string | number;
-    max?: string | number;
-}
 
 /**
  * An Input component for a number
@@ -31,11 +25,7 @@ interface Props {
  *
  * The object passed as `options` props is passed to the material-ui <TextField> component
  */
-const NumberInput: FunctionComponent<
-    Props &
-        InputProps<TextFieldProps> &
-        Omit<TextFieldProps, 'label' | 'helperText'>
-> = ({
+const NumberInput: FunctionComponent<NumberInputProps> = ({
     format,
     helperText,
     label,
@@ -59,7 +49,7 @@ const NumberInput: FunctionComponent<
         id,
         input,
         isRequired,
-        meta: { error, touched },
+        meta: { error, submitError, touched },
     } = useInput({
         format,
         onBlur,
@@ -80,11 +70,11 @@ const NumberInput: FunctionComponent<
             id={id}
             {...input}
             variant={variant}
-            error={!!(touched && error)}
+            error={!!(touched && (error || submitError))}
             helperText={
                 <InputHelperText
                     touched={touched}
-                    error={error}
+                    error={error || submitError}
                     helperText={helperText}
                 />
             }
@@ -99,7 +89,7 @@ const NumberInput: FunctionComponent<
             margin={margin}
             inputProps={inputProps}
             {...options}
-            {...sanitizeRestProps(rest)}
+            {...sanitizeInputRestProps(rest)}
         />
     );
 };
@@ -117,5 +107,21 @@ NumberInput.defaultProps = {
     step: 'any',
     textAlign: 'right',
 };
+
+export interface NumberInputProps
+    extends InputProps<TextFieldProps>,
+        Omit<
+            TextFieldProps,
+            | 'label'
+            | 'helperText'
+            | 'onChange'
+            | 'onBlur'
+            | 'onFocus'
+            | 'defaultValue'
+        > {
+    step?: string | number;
+    min?: string | number;
+    max?: string | number;
+}
 
 export default NumberInput;

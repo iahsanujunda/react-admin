@@ -1,6 +1,8 @@
 import * as React from 'react';
 import expect from 'expect';
-import { render, cleanup } from '@testing-library/react';
+import { render } from '@testing-library/react';
+import { RecordContextProvider } from 'ra-core';
+
 import ImageField from './ImageField';
 
 const defaultProps = {
@@ -9,8 +11,6 @@ const defaultProps = {
 };
 
 describe('<ImageField />', () => {
-    afterEach(cleanup);
-
     it('should return an empty div when record is not set', () => {
         const { container } = render(<ImageField {...defaultProps} />);
         expect(container.firstChild.textContent).toEqual('');
@@ -41,6 +41,25 @@ describe('<ImageField />', () => {
                 }}
                 title="title"
             />
+        );
+
+        const img = getByRole('img') as HTMLImageElement;
+        expect(img.src).toEqual('http://foo.com/bar.jpg');
+        expect(img.alt).toEqual('Hello world!');
+        expect(img.title).toEqual('Hello world!');
+    });
+
+    it('should use record from RecordContext', () => {
+        const { getByRole } = render(
+            <RecordContextProvider
+                value={{
+                    id: 123,
+                    url: 'http://foo.com/bar.jpg',
+                    title: 'Hello world!',
+                }}
+            >
+                <ImageField {...defaultProps} title="title" />
+            </RecordContextProvider>
         );
 
         const img = getByRole('img') as HTMLImageElement;

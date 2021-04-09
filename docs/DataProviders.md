@@ -52,36 +52,43 @@ const dataProvider = {
 
 You can find an example Data Provider implementation at the end of this chapter.
 
-**Tip**: In react-admin v2, Data Providers used to be functions, not objects. React-admin v3 can detect a legacy Data Provider and wrap an object around it. So Data Providers developed for react-admin v2 still work with react-admin v3.  
+**Tip**: A Data Provider can have more methods than the 9 methods listed above. For instance, you create a dataProvider with custom methods for calling non-REST API endpoints, manipulating tree structures, subscribing to real time updates, etc.
+
+**Tip**: In react-admin v2, Data Providers used to be functions, not objects. React-admin v3 can detect a legacy Data Provider and wrap an object around it. So Data Providers developed for react-admin v2 still work with react-admin v3.
 
 ## Available Providers
 
-The react-admin project includes 4 Data Providers:
+The react-admin project includes 5 Data Providers:
 
 * Simple REST: [marmelab/ra-data-simple-rest](https://github.com/marmelab/react-admin/tree/master/packages/ra-data-simple-rest) ([read more below](#usage)). It serves mostly as an example. Incidentally, it is compatible with the [FakeRest](https://github.com/marmelab/FakeRest) API.
 * **[JSON server](https://github.com/typicode/json-server)**: [marmelab/ra-data-json-server](https://github.com/marmelab/react-admin/tree/master/packages/ra-data-json-server). Great for prototyping an admin over a yet-to-be-developed REST API.
-* [Graphcool](https://www.graph.cool/): [marmelab/ra-data-graphcool](https://github.com/marmelab/react-admin/tree/master/packages/ra-data-graphcool). A provider for GraphQL servers following the Graphcool convention. Incidentally, this package builds up on [marmelab/ra-data-graphql](https://github.com/marmelab/react-admin/tree/master/packages/ra-data-graphql), which lets you develop providers for other GraphQL conventions.
+* [Simple GraphQL](https://graphql.org/): [marmelab/ra-data-graphql-simple](https://github.com/marmelab/react-admin/tree/master/packages/ra-data-graphql-simple). A GraphQL provider built with Apollo and tailored to target a simple GraphQL implementation.
 * Local JSON: [marmelab/ra-data-fakerest](https://github.com/marmelab/react-admin/tree/master/packages/ra-data-fakerest). Based on a local object, it doesn't even use HTTP. Use it for testing purposes.
+* Local Storage: [marmelab/ra-data-localstorage](https://github.com/marmelab/react-admin/tree/master/packages/ra-data-localstorage). User editions are persisted across refreshes and between sessions. This allows local-first apps, and can be useful in tests.
 
 Developers from the react-admin community have open-sourced Data Providers for many more backends:
 
 * **[AWS Amplify](https://docs.amplify.aws)**: [MrHertal/react-admin-amplify](https://github.com/MrHertal/react-admin-amplify)
+* **[Configurable Identity Property REST Client](https://github.com/zachrybaker/ra-data-rest-client)**: [zachrybaker/ra-data-rest-client](https://github.com/zachrybaker/ra-data-rest-client)
+* **[coreBOS](https://corebos.com/)**: [React-Admin coreBOS Integration](https://github.com/coreBOS/reactadminportal)
 * **[Django Rest Framework](https://www.django-rest-framework.org/)**: [synaptic-cl/ra-data-drf](https://github.com/synaptic-cl/ra-data-drf)
 * **[Express & Sequelize](https://github.com/lalalilo/express-sequelize-crud)**: [express-sequelize-crud](https://github.com/lalalilo/express-sequelize-crud)
-* **[Feathersjs](http://www.feathersjs.com/)**: [josx/ra-data-feathers](https://github.com/josx/ra-data-feathers)
+* **[Feathersjs](https://www.feathersjs.com/)**: [josx/ra-data-feathers](https://github.com/josx/ra-data-feathers)
 * **[Firebase Firestore](https://firebase.google.com/docs/firestore)**: [benwinding/react-admin-firebase](https://github.com/benwinding/react-admin-firebase).
 * **[Firebase Realtime Database](https://firebase.google.com/docs/database)**: [aymendhaya/ra-data-firebase-client](https://github.com/aymendhaya/ra-data-firebase-client).
-* **[GraphCool](http://www.graph.cool/)**: [marmelab/ra-data-graphcool](https://github.com/marmelab/react-admin/tree/master/packages/ra-data-graphcool) (uses [Apollo](http://www.apollodata.com/))
-* **[GraphQL](http://graphql.org/)**: [marmelab/ra-data-graphql](https://github.com/marmelab/react-admin/tree/master/packages/ra-data-graphql) (uses [Apollo](http://www.apollodata.com/))
+* **[GraphQL](https://graphql.org/)**: [marmelab/ra-data-graphql](https://github.com/marmelab/react-admin/tree/master/packages/ra-data-graphql) (uses [Apollo](https://www.apollodata.com/))
 * **[HAL](http://stateless.co/hal_specification.html)**: [b-social/ra-data-hal](https://github.com/b-social/ra-data-hal)
-* **[Hasura](https://github.com/hasura/graphql-engine)**: [hasura/ra-data-hasura](https://github.com/hasura/graphql-engine/tree/master/community/tools/ra-data-hasura)
-* **[Hydra](http://www.hydra-cg.com/) / [JSON-LD](https://json-ld.org/)**: [api-platform/admin/hydra](https://github.com/api-platform/admin/blob/master/src/hydra/dataProvider.js)
+* **[Hasura](https://github.com/hasura/graphql-engine)**: [hasura/ra-data-hasura](https://github.com/hasura/ra-data-hasura), auto generates valid GraphQL queries based on the properties exposed by the Hasura API.
+* **[Hydra](https://www.hydra-cg.com/) / [JSON-LD](https://json-ld.org/)**: [api-platform/admin/hydra](https://github.com/api-platform/admin/blob/master/src/hydra/dataProvider.js)
 * **[IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API)**: [tykoth/ra-data-dexie](https://github.com/tykoth/ra-data-dexie)
-* **[JSON API](http://jsonapi.org/)**: [henvo/ra-jsonapi-client](https://github.com/henvo/ra-jsonapi-client)
+* **[JSON API](https://jsonapi.org/)**: [henvo/ra-jsonapi-client](https://github.com/henvo/ra-jsonapi-client)
 * **[JSON HAL](https://tools.ietf.org/html/draft-kelly-json-hal-08)**: [ra-data-json-hal](https://www.npmjs.com/package/ra-data-json-hal)
 * **[JSON server](https://github.com/typicode/json-server)**: [marmelab/ra-data-json-server](https://github.com/marmelab/react-admin/tree/master/packages/ra-data-json-server).
+* **[LocalStorage](https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage)**: [marmelab/ra-data-localstorage](https://github.com/marmelab/react-admin/tree/master/packages/ra-data-localstorage)
 * **[Loopback3](https://loopback.io/lb3)**: [darthwesker/react-admin-loopback](https://github.com/darthwesker/react-admin-loopback)
 * **[Loopback4](https://loopback.io/)**: [elmaistrenko/react-admin-lb4](https://github.com/elmaistrenko/react-admin-lb4)
+* **[Loopback4 CRUD](https://github.com/loopback4/loopback-component-crud)**: [loopback4/ra-data-lb4](https://github.com/loopback4/ra-data-lb4)
+* **[Mixer](https://github.com/ckoliber/ra-data-mixer)**: [ckoliber/ra-data-mixer](https://github.com/ckoliber/ra-data-mixer)
 * **[Moleculer Microservices](https://github.com/RancaguaInnova/moleculer-data-provider)**: [RancaguaInnova/moleculer-data-provider](https://github.com/RancaguaInnova/moleculer-data-provider)
 * **[NestJS CRUD](https://github.com/nestjsx/crud)**: [rayman1104/ra-data-nestjsx-crud](https://github.com/rayman1104/ra-data-nestjsx-crud)
 * **[Parse](https://parseplatform.org/)**: [almahdi/ra-data-parse](https://github.com/almahdi/ra-data-parse)
@@ -89,6 +96,7 @@ Developers from the react-admin community have open-sourced Data Providers for m
 * **[PostgREST](https://postgrest.org/)**: [raphiniert-com/ra-data-postgrest](https://github.com/raphiniert-com/ra-data-postgrest)
 * **[Prisma](https://github.com/weakky/ra-data-prisma)**: [weakky/ra-data-prisma](https://github.com/weakky/ra-data-prisma)
 * **[Prisma Version 2](https://www.prisma.io/)**: [panter/ra-data-prisma](https://github.com/panter/ra-data-prisma)
+* **[ProcessMaker3](https://www.processmaker.com/)**: [ckoliber/ra-data-processmaker3](https://github.com/ckoliber/ra-data-processmaker3)
 * **[OpenCRUD](https://www.opencrud.org/)**: [weakky/ra-data-opencrud](https://github.com/Weakky/ra-data-opencrud)
 * **[REST-HAPI](https://github.com/JKHeadley/rest-hapi)**: [ra-data-rest-hapi](https://github.com/mkg20001/ra-data-rest-hapi)
 * **[Sails.js](https://sailsjs.com/)**: [mpampin/ra-data-json-sails](https://github.com/mpampin/ra-data-json-sails)
@@ -141,7 +149,7 @@ Here is how this Data Provider maps react-admin calls to API calls:
 | `getOne`           | `GET http://my.api.url/posts/123`                                                       |
 | `getMany`          | `GET http://my.api.url/posts?filter={"id":[123,456,789]}`                               |
 | `getManyReference` | `GET http://my.api.url/posts?filter={"author_id":345}`                                  |
-| `create`           | `POST http://my.api.url/posts/123`                                                      |
+| `create`           | `POST http://my.api.url/posts`                                                      |
 | `update`           | `PUT http://my.api.url/posts/123`                                                       |
 | `updateMany`       | Multiple calls to `PUT http://my.api.url/posts/123`                                     |
 | `delete`           | `DELETE http://my.api.url/posts/123`                                                    |
@@ -280,6 +288,29 @@ Using this technique, you can also combine two Data Providers for two backends i
 APIs are so diverse that quite often, none of the available Data Providers suit you API. In such cases, you'll have to write your own Data Provider. Don't worry, it usually takes only a couple of hours. 
 
 The methods of a Data Provider receive a request, and return a promise for a response. Both the request and the response format are standardized.
+
+**Caution**: A Data Provider should return the same shape in `getList` and `getOne` for a given resource. This is because react-admin uses "optimistic rendering", and renders the Edit and Show view *before* calling `dataProvider.getOne()` by reusing the response from `dataProvider.getList()` if the user has displayed the List view before. If your API has different shapes for a query for a unique record and for a query for a list of records, your Data Provider should make these records consistent in shape before returning them to react-admin.
+
+For instance, the following Data Provider returns more details in `getOne` than in `getList`:
+
+```jsx
+const { data } = await dataProvider.getList('posts', {
+    pagination: { page: 1, perPage: 5 },
+    sort: { field: 'title', order: 'ASC' },
+    filter: { author_id: 12 },
+})
+// [
+//   { id: 123, title: "hello, world", author_id: 12 },
+//   { id: 125, title: "howdy partner", author_id: 12 },
+//  ],
+
+const { data } = dataProvider.getOne('posts', { id: 123 })
+// {
+//     data: { id: 123, title: "hello, world", author_id: 12, body: 'Lorem Ipsum Sic Dolor Amet' }
+// }
+```
+
+This will cause the Edit view to blink on load. If you have this problem, modify your Data Provider to return the same shape for all methods. 
 
 ## Request Format
 
@@ -498,9 +529,10 @@ export default {
 
 Let's say that you want to map the react-admin requests to a REST backend exposing the following API:
 
-```
-# getList
 
+### getList
+
+```
 GET http://path.to.my.api/posts?sort=["title","ASC"]&range=[0, 4]&filter={"author_id":12}
 
 HTTP/1.1 200 OK
@@ -513,17 +545,21 @@ Content-Range: posts 0-4/27
     { "id": 123, "title": "hello, world", "author_id": 12 },
     { "id": 125, "title": "howdy partner", "author_id": 12 }
 ]
+```
 
-# getOne
+### getOne
 
+```
 GET http://path.to.my.api/posts/123
 
 HTTP/1.1 200 OK
 Content-Type: application/json
 { "id": 123, "title": "hello, world", "author_id": 12 }
+```
 
-# getMany
+### getMany
 
+```
 GET http://path.to.my.api/posts?filter={"id":[123,124,125]}
 
 HTTP/1.1 200 OK
@@ -533,9 +569,11 @@ Content-Type: application/json
     { "id": 124, "title": "good day sunshine", "author_id": 12 },
     { "id": 125, "title": "howdy partner", "author_id": 12 }
 ]
+```
 
-# getManyReference
+### getManyReference
 
+```
 GET http://path.to.my.api/comments?sort=["created_at","DESC"]&range=[0, 24]&filter={"post_id":123}
 
 HTTP/1.1 200 OK
@@ -545,45 +583,54 @@ Content-Range: comments 0-1/2
     { "id": 667, "title": "I agree", "post_id": 123 },
     { "id": 895, "title": "I don't agree", "post_id": 123 }
 ]
+```
 
-# create
+### create
 
+```
 POST http://path.to.my.api/posts
 { "title": "hello, world", "author_id": 12 }
 
 HTTP/1.1 200 OK
 Content-Type: application/json
 { "id": 123, "title": "hello, world", "author_id": 12 }
+```
 
+### update
 
-# update
-
+```
 PUT http://path.to.my.api/posts/123
 { "title": "hello, world!" }
 
 HTTP/1.1 200 OK
 Content-Type: application/json
 { "id": 123, "title": "hello, world!", "author_id": 12 }
+```
 
-# updateMany
+### updateMany
 
+```
 PUT http://path.to.my.api/posts?filter={"id":[123,124,125]}
 { "title": "hello, world!" }
 
 HTTP/1.1 200 OK
 Content-Type: application/json
 [123, 124, 125]
+```
 
-# delete
+### delete
 
+```
 DELETE http://path.to.my.api/posts/123
 
 HTTP/1.1 200 OK
 Content-Type: application/json
 { "id": 123, "title": "hello, world", "author_id": 12 }
+```
 
-# deleteMany
+### deleteMany
 
+```
 DELETE http://path.to.my.api/posts?filter={"id":[123,124,125]}
 
 HTTP/1.1 200 OK
@@ -722,3 +769,37 @@ const UserProfile = ({ record }) => {
 ```
 
 You will find complete usage documentation for the data provider hooks in the [Querying the API](./Actions.md) documentation chapter.
+
+## Real-Time Updates And Locks
+
+Teams where several people work in parallel on a common task need to allow live updates, real-time notifications, and prevent data loss when two editors work on the same resource concurrently. 
+
+[`ra-realtime`](https://marmelab.com/ra-enterprise/modules/ra-realtime) (an [Enterprise Edition <img class="icon" src="./img/premium.svg" />](https://marmelab.com/ra-enterprise) module) provides hooks and UI components to lock records, and update views when the underlying data changes. It's based on the Publish / Subscribe (PubSub) pattern, and requires a backend supporting this pattern (like GraphQL, Mercure). 
+
+For instance, here is how to enable live updates on a List view:
+
+```diff
+import {
+-   List,
+    Datagrid,
+    TextField,
+    NumberField,
+    Datefield,
+} from 'react-admin';
++import { RealTimeList } from '@react-admin/ra-realtime';
+
+const PostList = props => (
+-   <List {...props}>
++   <RealTimeList {...props}>
+        <Datagrid>
+            <TextField source="title" />
+            <NumberField source="views" />
+            <DateField source="published_at" />
+        </Datagrid>
+-   </List>
++   </RealTimeList>
+);
+```
+
+Check [the `ra-realtime` documentation](https://marmelab.com/ra-enterprise/modules/ra-realtime) for more details.
+

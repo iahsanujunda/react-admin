@@ -1,6 +1,11 @@
 import get from 'lodash/get';
 
-import { Identifier, Record, ReduxState } from '../types';
+import {
+    Identifier,
+    Record,
+    ReduxState,
+    UseDataProviderOptions,
+} from '../types';
 import useQueryWithStore from './useQueryWithStore';
 
 /**
@@ -18,7 +23,10 @@ import useQueryWithStore from './useQueryWithStore';
  *
  * @param resource The resource name, e.g. 'posts'
  * @param id The resource identifier, e.g. 123
- * @param options Options object to pass to the dataProvider. May include side effects to be executed upon success of failure, e.g. { onSuccess: { refresh: true } }
+ * @param {Object} options Options object to pass to the dataProvider.
+ * @param {boolean} options.enabled Flag to conditionally run the query. If it's false, the query will not run
+ * @param {Function} options.onSuccess Side effect function to be executed upon success, e.g. { onSuccess: { refresh: true } }
+ * @param {Function} options.onFailure Side effect function to be executed upon failure, e.g. { onFailure: error => notify(error.message) }
  *
  * @returns The current request state. Destructure as { data, error, loading, loaded }.
  *
@@ -33,11 +41,11 @@ import useQueryWithStore from './useQueryWithStore';
  *     return <div>User {data.username}</div>;
  * };
  */
-const useGetOne = (
+const useGetOne = <RecordType extends Record = Record>(
     resource: string,
     id: Identifier,
-    options?: any
-): UseGetOneHookValue =>
+    options?: UseDataProviderOptions
+): UseGetOneHookValue<RecordType> =>
     useQueryWithStore(
         { type: 'getOne', resource, payload: { id } },
         options,
@@ -45,7 +53,7 @@ const useGetOne = (
             if (
                 // resources are registered
                 Object.keys(state.admin.resources).length > 0 &&
-                // no registered resource mathing the query
+                // no registered resource matching the query
                 !state.admin.resources[resource]
             ) {
                 throw new Error(
@@ -56,8 +64,8 @@ const useGetOne = (
         }
     );
 
-export type UseGetOneHookValue = {
-    data?: Record;
+export type UseGetOneHookValue<RecordType extends Record = Record> = {
+    data?: RecordType;
     loading: boolean;
     loaded: boolean;
     error?: any;

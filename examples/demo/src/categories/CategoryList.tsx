@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { FC } from 'react';
-import { EditButton, List } from 'react-admin';
-import { ListControllerProps } from 'ra-core';
+import { EditButton, List, ListProps, useListContext } from 'react-admin';
 import inflection from 'inflection';
 import {
     Grid,
@@ -11,7 +10,6 @@ import {
     CardActions,
     Typography,
 } from '@material-ui/core';
-
 import { makeStyles } from '@material-ui/core/styles';
 
 import LinkToRelatedProducts from './LinkToRelatedProducts';
@@ -33,18 +31,16 @@ const useStyles = makeStyles({
     },
 });
 
-const CategoryGrid: FC<ListControllerProps<Category>> = props => {
+const CategoryGrid: FC = props => {
     const classes = useStyles(props);
-    const { data, ids } = props;
+    const { data, ids } = useListContext<Category>();
     return ids ? (
         <Grid container spacing={2} className={classes.root}>
             {ids.map(id => (
                 <Grid key={id} xs={12} sm={6} md={4} lg={3} xl={2} item>
                     <Card>
                         <CardMedia
-                            image={`https://marmelab.com/posters/${
-                                data[id].name
-                            }-1.jpeg`}
+                            image={`https://marmelab.com/posters/${data[id].name}-1.jpeg`}
                             className={classes.media}
                         />
                         <CardContent className={classes.title}>
@@ -72,7 +68,7 @@ const CategoryGrid: FC<ListControllerProps<Category>> = props => {
     ) : null;
 };
 
-const CategoryList = (props: any) => (
+const CategoryList: FC<ListProps> = props => (
     <List
         {...props}
         sort={{ field: 'name', order: 'ASC' }}
@@ -81,8 +77,6 @@ const CategoryList = (props: any) => (
         component="div"
         actions={false}
     >
-        {/* 
-        // @ts-ignore */}
         <CategoryGrid />
     </List>
 );

@@ -13,7 +13,7 @@ The `<Admin>` tag is a great shortcut to be up and running with react-admin in m
 
 The `<Admin>` component detects when it's used inside an existing Redux `<Provider>`, and skips its own store initialization. That means that react-admin will work out of the box inside another Redux application - provided, of course, the store is compatible.
 
-Beware that you need to know about [redux](http://redux.js.org/), [react-router-dom](https://reacttraining.com/react-router/web/guides/quick-start), and [redux-saga](https://github.com/yelouafi/redux-saga) to go further.
+Beware that you need to know about [redux](https://redux.js.org/), [react-router-dom](https://reacttraining.com/react-router/web/guides/quick-start), and [redux-saga](https://github.com/yelouafi/redux-saga) to go further.
 
 React-admin requires that the redux state contains at least 2 reducers: `admin` and `router`. You can add more, or replace some of them with your own, but you can't remove or rename them. As it relies on `connected-react-router` and `redux-saga`, react-admin also expects the store to use their middlewares.
 
@@ -83,7 +83,7 @@ export default ({
 
 You can use this script as a base and then add your own middlewares or enhancers, e.g., to allow store persistence with [redux-persist](https://github.com/rt2zz/redux-persist).
 
-Then, use the `<Admin>` component as you would in a standalone application. Here is an example with 3 resources: `posts`, `comments`, and `users`
+Then, use the `<Admin>` component as you would in a standalone application. Here is an example with 3 resources: `posts`, `comments`, and `users`.
 
 ```jsx
 // in src/App.js
@@ -150,23 +150,26 @@ Here is the main code for bootstrapping a barebone react-admin application witho
 ```diff
 // in src/App.js
 import * as React from "react";
++import PropTypes from "prop-types";
 import { Provider } from 'react-redux';
 import { createHashHistory } from 'history';
 +import { ConnectedRouter } from 'connected-react-router';
 +import { Switch, Route } from 'react-router-dom';
-+import withContext from 'recompose/withContext';
++import withContext from 'recompose/withContext'; // You should add recompose/withContext to your dependencies
 -import { Admin, Resource } from 'react-admin';
-+import { AuthContext, DataProviderContext, TranslationProvider, Resource } from 'react-admin';
++import { AuthContext, DataProviderContext, TranslationProvider, Resource, Notification } from 'react-admin';
 import restProvider from 'ra-data-simple-rest';
 import defaultMessages from 'ra-language-english';
 import polyglotI18nProvider from 'ra-i18n-polyglot';
 +import { ThemeProvider } from '@material-ui/styles';
++import { createMuiTheme } from "@material-ui/core/styles";
 +import AppBar from '@material-ui/core/AppBar';
 +import Toolbar from '@material-ui/core/Toolbar';
 +import Typography from '@material-ui/core/Typography';
 
 import createAdminStore from './createAdminStore';
 import messages from './i18n';
+import authProvider from './myAuthProvider';
 
 // your app components
 import Dashboard from './Dashboard';
@@ -176,7 +179,6 @@ import { UserList, UserEdit, UserCreate } from './User';
 
 // dependency injection
 const dataProvider = restProvider('http://path.to.my.api/');
-const authProvider = () => Promise.resolve();
 const i18nProvider = polyglotI18nProvider(locale => {
     if (locale !== 'en') {
         return messages[locale];
@@ -184,6 +186,7 @@ const i18nProvider = polyglotI18nProvider(locale => {
     return defaultMessages;
 });
 const history = createHashHistory();
+const theme = createMuiTheme();
 
 const App = () => (
     <Provider
@@ -204,10 +207,10 @@ const App = () => (
 +       <AuthContext.Provider value={authProvider}>
 +       <DataProviderContext.Provider value={dataProvider}>
 +       <TranslationProvider
-+           locale={locale}
++           locale="en"
 +           i18nProvider={i18nProvider}
 +       >
-+           <ThemeProvider>
++           <ThemeProvider theme={theme}>
 +               <Resource name="posts" intent="registration" />
 +               <Resource name="comments" intent="registration" />
 +               <Resource name="users" intent="registration" />
@@ -233,6 +236,7 @@ const App = () => (
 +                       <Route exact path="/users/:id" render={(routeProps) => <UsersEdit resource="users" basePath={routeProps.match.url} id={decodeURIComponent((routeProps.match).params.id)} {...routeProps} />} />
 +                   </Switch>
 +               </ConnectedRouter>
++               <Notification />
 +           </ThemeProvider>
 +       </TranslationProvider>
 +       </DataProviderContext.Provider>
@@ -244,7 +248,7 @@ const App = () => (
 -export default App;
 +export default withContext(
 +   {
-+       authProvider: PropTypes.func,
++       authProvider: PropTypes.object,
 +   },
 +   () => ({ authProvider })
 +)(App);

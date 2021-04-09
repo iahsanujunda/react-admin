@@ -7,7 +7,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import classnames from 'classnames';
 import { useInput, useTranslate, FieldTitle, InputProps } from 'ra-core';
 
-import sanitizeRestProps from './sanitizeRestProps';
+import sanitizeInputRestProps from './sanitizeInputRestProps';
 import InputHelperText from './InputHelperText';
 
 const useStyles = makeStyles(
@@ -29,9 +29,14 @@ const getStringFromBoolean = (value?: boolean | null): string => {
     return '';
 };
 
-const NullableBooleanInput: FunctionComponent<
-    InputProps<TextFieldProps> & Omit<TextFieldProps, 'label' | 'helperText'>
-> = props => {
+export type NullableBooleanInputProps = InputProps<TextFieldProps> &
+    Omit<TextFieldProps, 'label' | 'helperText'> & {
+        nullLabel?: string;
+        falseLabel?: string;
+        trueLabel?: string;
+    };
+
+const NullableBooleanInput: FunctionComponent<NullableBooleanInputProps> = props => {
     const {
         className,
         classes: classesOverride,
@@ -43,12 +48,14 @@ const NullableBooleanInput: FunctionComponent<
         onChange,
         onFocus,
         options,
-        displayNull,
         parse = getBooleanFromString,
         resource,
         source,
         validate,
         variant = 'filled',
+        nullLabel = 'ra.boolean.null',
+        falseLabel = 'ra.boolean.false',
+        trueLabel = 'ra.boolean.true',
         ...rest
     } = props;
     const classes = useStyles(props);
@@ -58,7 +65,7 @@ const NullableBooleanInput: FunctionComponent<
         id,
         input,
         isRequired,
-        meta: { error, touched },
+        meta: { error, submitError, touched },
     } = useInput({
         format,
         onBlur,
@@ -68,21 +75,8 @@ const NullableBooleanInput: FunctionComponent<
         resource,
         source,
         validate,
+        ...rest,
     });
-
-    const enhancedOptions = displayNull
-        ? {
-              ...options,
-              SelectProps: {
-                  displayEmpty: true,
-                  ...(options && options.SelectProps),
-              },
-              InputLabelProps: {
-                  shrink: true,
-                  ...(options && options.InputLabelProps),
-              },
-          }
-        : options;
 
     return (
         <TextField
@@ -98,22 +92,22 @@ const NullableBooleanInput: FunctionComponent<
                     isRequired={isRequired}
                 />
             }
-            error={!!(touched && error)}
+            error={!!(touched && (error || submitError))}
             helperText={
                 <InputHelperText
                     touched={touched}
-                    error={error}
+                    error={error || submitError}
                     helperText={helperText}
                 />
             }
             className={classnames(classes.input, className)}
             variant={variant}
-            {...enhancedOptions}
-            {...sanitizeRestProps(rest)}
+            {...options}
+            {...sanitizeInputRestProps(rest)}
         >
-            <MenuItem value="">{translate('ra.boolean.null')}</MenuItem>
-            <MenuItem value="false">{translate('ra.boolean.false')}</MenuItem>
-            <MenuItem value="true">{translate('ra.boolean.true')}</MenuItem>
+            <MenuItem value="">{translate(nullLabel)}</MenuItem>
+            <MenuItem value="false">{translate(falseLabel)}</MenuItem>
+            <MenuItem value="true">{translate(trueLabel)}</MenuItem>
         </TextField>
     );
 };
@@ -123,6 +117,9 @@ NullableBooleanInput.propTypes = {
     options: PropTypes.object,
     resource: PropTypes.string,
     source: PropTypes.string,
+    nullLabel: PropTypes.string,
+    falseLabel: PropTypes.string,
+    trueLabel: PropTypes.string,
 };
 
 export default NullableBooleanInput;

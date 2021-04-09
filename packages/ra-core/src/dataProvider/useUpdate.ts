@@ -1,5 +1,5 @@
 import { Identifier } from '../types';
-import useMutation from './useMutation';
+import useMutation, { MutationOptions } from './useMutation';
 
 /**
  * Get a callback to call the dataProvider.update() method, the result and the loading state.
@@ -14,7 +14,7 @@ import useMutation from './useMutation';
  * @param id The resource identifier, e.g. 123
  * @param data The updates to merge into the record, e.g. { views: 10 }
  * @param previousData The record before the update is applied
- * @param options Options object to pass to the dataProvider. May include side effects to be executed upon success of failure, e.g. { onSuccess: { refresh: true } }
+ * @param options Options object to pass to the dataProvider. May include side effects to be executed upon success or failure, e.g. { onSuccess: { refresh: true } }
  *
  * @returns The current request state. Destructure as [update, { data, error, loading, loaded }].
  *
@@ -34,7 +34,7 @@ const useUpdate = (
     id: Identifier,
     data?: any,
     previousData?: any,
-    options?: any
+    options?: MutationOptions
 ) =>
     useMutation(
         { type: 'update', resource, payload: { id, data, previousData } },

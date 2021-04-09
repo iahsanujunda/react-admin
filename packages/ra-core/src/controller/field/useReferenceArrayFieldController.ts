@@ -3,26 +3,29 @@ import get from 'lodash/get';
 import isEqual from 'lodash/isEqual';
 
 import { useSafeSetState, removeEmpty } from '../../util';
-import { Record, RecordMap, Identifier, Sort } from '../../types';
+import { Record, RecordMap, Identifier, SortPayload } from '../../types';
 import { useGetMany } from '../../dataProvider';
 import { ListControllerProps } from '../useListController';
 import { useNotify } from '../../sideEffect';
 import usePaginationState from '../usePaginationState';
 import useSelectionState from '../useSelectionState';
 import useSortState from '../useSortState';
+import { useResourceContext } from '../../core';
+import { indexById } from '../../util/indexById';
 
 interface Option {
-    basePath: string;
+    basePath?: string;
     filter?: any;
     page?: number;
     perPage?: number;
     record?: Record;
     reference: string;
     resource: string;
-    sort?: Sort;
+    sort?: SortPayload;
     source: string;
 }
 
+const emptyArray = [];
 const defaultFilter = {};
 const defaultSort = { field: null, order: null };
 
@@ -40,37 +43,53 @@ const defaultSort = { field: null, order: null };
  *      source: 'referenceIds';
  * });
  *
- * @param {Object} option
- * @param {string} option.basePath basepath to current resource
- * @param {Object} option.record The The current resource record
- * @param {string} option.reference The linked resource name
- * @param {string} option.resource The current resource name
- * @param {string} option.source The key of the linked resource identifier
+ * @param {Object} props
+ * @param {string} props.basePath basepath to current resource
+ * @param {Object} props.record The current resource record
+ * @param {string} props.reference The linked resource name
+ * @param {string} props.resource The current resource name
+ * @param {string} props.source The key of the linked resource identifier
+ *
+ * @param {Props} props
  *
  * @returns {ReferenceArrayProps} The reference props
  */
-const useReferenceArrayFieldController = ({
-    basePath,
-    filter = defaultFilter,
-    page: initialPage = 1,
-    perPage: initialPerPage = 1000,
-    record,
-    reference,
-    resource,
-    sort: initialSort = defaultSort,
-    source,
-}: Option): ListControllerProps => {
+const useReferenceArrayFieldController = (
+    props: Option
+): ListControllerProps => {
+    const {
+        basePath,
+        filter = defaultFilter,
+        page: initialPage = 1,
+        perPage: initialPerPage = 1000,
+        record,
+        reference,
+        sort: initialSort = defaultSort,
+        source,
+    } = props;
+    const resource = useResourceContext(props);
     const notify = useNotify();
-    const ids = get(record, source) || [];
+    const ids = get(record, source) || emptyArray;
     const { data, error, loading, loaded } = useGetMany(reference, ids, {
         onFailure: error =>
             notify(
                 typeof error === 'string'
                     ? error
                     : error.message || 'ra.notification.http_error',
-                'warning'
+                'warning',
+                {
+                    _:
+                        typeof error === 'string'
+                            ? error
+                            : error && error.message
+                            ? error.message
+                            : undefined,
+                }
             ),
     });
+
+    const [loadingState, setLoadingState] = useSafeSetState<boolean>(loading);
+    const [loadedState, setLoadedState] = useSafeSetState<boolean>(loaded);
 
     const [finalData, setFinalData] = useSafeSetState<RecordMap>(
         indexById(data)
@@ -125,11 +144,11 @@ const useReferenceArrayFieldController = ({
     const showFilter = useCallback(
         (filterName: string, defaultValue: any) => {
             setDisplayedFilters(previousState => ({
-                previousState,
+                ...previousState,
                 [filterName]: true,
             }));
             setFilterValues(previousState => ({
-                previousState,
+                ...previousState,
                 [filterName]: defaultValue,
             }));
         },
@@ -156,10 +175,11 @@ const useReferenceArrayFieldController = ({
         if (!loaded) return;
         // 1. filter
         let tempData = data.filter(record =>
-            Object.entries(filterValues).every(
-                ([filterName, filterValue]) =>
-                    // eslint-disable-next-line eqeqeq
-                    filterValue == get(record, filterName)
+            Object.entries(filterValues).every(([filterName, filterValue]) =>
+                Array.isArray(get(record, filterName))
+                    ? get(record, filterName).includes(filterValue)
+                    : // eslint-disable-next-line eqeqeq
+                      filterValue == get(record, filterName)
             )
         );
         // 2. sort
@@ -194,8 +214,22 @@ const useReferenceArrayFieldController = ({
         sort.order,
     ]);
 
+    useEffect(() => {
+        if (loaded !== loadedState) {
+            setLoadedState(loaded);
+        }
+    }, [loaded, loadedState, setLoadedState]);
+
+    useEffect(() => {
+        if (loading !== loadingState) {
+            setLoadingState(loading);
+        }
+    }, [loading, loadingState, setLoadingState]);
+
     return {
-        basePath: basePath.replace(resource, reference),
+        basePath: basePath
+            ? basePath.replace(resource, reference)
+            : `/${reference}`,
         currentSort: sort,
         data: finalData,
         defaultTitle: null,
@@ -205,14 +239,14 @@ const useReferenceArrayFieldController = ({
         hasCreate: false,
         hideFilter,
         ids: finalIds,
-        loaded,
-        loading,
+        loaded: loadedState,
+        loading: loadingState,
         onSelect,
         onToggleItem,
         onUnselectItems,
         page,
         perPage,
-        resource,
+        resource: reference,
         selectedIds,
         setFilters,
         setPage,
@@ -222,13 +256,5 @@ const useReferenceArrayFieldController = ({
         total: finalIds.length,
     };
 };
-
-const indexById = (records: Record[] = []): RecordMap =>
-    records
-        .filter(r => typeof r !== 'undefined')
-        .reduce((prev, current) => {
-            prev[current.id] = current;
-            return prev;
-        }, {});
 
 export default useReferenceArrayFieldController;

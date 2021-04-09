@@ -27,18 +27,18 @@ const useStyles = makeStyles(
     { name: 'RaLabeled' }
 );
 
-interface Props {
+export interface LabeledProps {
     children: ReactElement;
     className?: string;
     classes?: object;
     fullWidth?: boolean;
-    id: string;
-    input: any;
-    isRequired: boolean;
+    id?: string;
+    input?: any;
+    isRequired?: boolean;
     label?: string | ReactElement;
-    meta: any;
-    resource: string;
-    source: string;
+    meta?: any;
+    resource?: string;
+    source?: string;
     [key: string]: any;
 }
 /**
@@ -56,7 +56,7 @@ interface Props {
  *     <FooComponent source="title" />
  * </Labeled>
  */
-const Labeled: FunctionComponent<Props> = props => {
+const Labeled: FunctionComponent<LabeledProps> = props => {
     const {
         children,
         className,
@@ -87,7 +87,7 @@ const Labeled: FunctionComponent<Props> = props => {
         <FormControl
             className={className}
             fullWidth={fullWidth}
-            error={meta && meta.touched && !!meta.error}
+            error={meta && meta.touched && !!(meta.error || meta.submitError)}
             margin={margin}
         >
             <InputLabel htmlFor={id} shrink className={classes.label}>

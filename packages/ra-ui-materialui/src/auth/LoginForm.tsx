@@ -2,10 +2,12 @@ import * as React from 'react';
 import { FunctionComponent } from 'react';
 import PropTypes from 'prop-types';
 import { Field, Form } from 'react-final-form';
-import CardActions from '@material-ui/core/CardActions';
-import Button from '@material-ui/core/Button';
-import TextField from '@material-ui/core/TextField';
-import CircularProgress from '@material-ui/core/CircularProgress';
+import {
+    Button,
+    CardActions,
+    CircularProgress,
+    TextField,
+} from '@material-ui/core';
 import { makeStyles, Theme } from '@material-ui/core/styles';
 import { useTranslate, useLogin, useNotify, useSafeSetState } from 'ra-core';
 
@@ -84,7 +86,15 @@ const LoginForm: FunctionComponent<Props> = props => {
                         : typeof error === 'undefined' || !error.message
                         ? 'ra.auth.sign_in_error'
                         : error.message,
-                    'warning'
+                    'warning',
+                    {
+                        _:
+                            typeof error === 'string'
+                                ? error
+                                : error && error.message
+                                ? error.message
+                                : undefined,
+                    }
                 );
             });
     };

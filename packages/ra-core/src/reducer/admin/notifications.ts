@@ -4,20 +4,25 @@ import {
     ShowNotificationAction,
     HIDE_NOTIFICATION,
     HideNotificationAction,
-    Notification,
+    RESET_NOTIFICATION,
+    ResetNotificationAction,
+    NotificationPayload,
 } from '../../actions/notificationActions';
 import { UNDO, UndoAction } from '../../actions/undoActions';
 
 type ActionTypes =
     | ShowNotificationAction
     | HideNotificationAction
+    | ResetNotificationAction
     | UndoAction
     | { type: 'OTHER_TYPE' };
 
-type State = Notification[];
+type State = NotificationPayload[];
+
+const initialState = [];
 
 const notificationsReducer: Reducer<State> = (
-    previousState = [],
+    previousState = initialState,
     action: ActionTypes
 ) => {
     switch (action.type) {
@@ -26,6 +31,8 @@ const notificationsReducer: Reducer<State> = (
         case HIDE_NOTIFICATION:
         case UNDO:
             return previousState.slice(1);
+        case RESET_NOTIFICATION:
+            return initialState;
         default:
             return previousState;
     }

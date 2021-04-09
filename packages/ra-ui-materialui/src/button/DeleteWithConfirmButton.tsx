@@ -13,9 +13,13 @@ import classnames from 'classnames';
 import inflection from 'inflection';
 import {
     useTranslate,
+    MutationMode,
     Record,
     RedirectionSideEffect,
     useDeleteWithConfirmController,
+    OnSuccess,
+    OnFailure,
+    useResourceContext,
 } from 'ra-core';
 
 import Confirm from '../layout/Confirm';
@@ -30,14 +34,17 @@ const DeleteWithConfirmButton: FC<DeleteWithConfirmButtonProps> = props => {
         confirmContent = 'ra.message.delete_content',
         icon = defaultIcon,
         label = 'ra.action.delete',
+        mutationMode,
         onClick,
         record,
-        resource,
         redirect = 'list',
+        onSuccess,
+        onFailure,
         ...rest
     } = props;
     const translate = useTranslate();
     const classes = useStyles(props);
+    const resource = useResourceContext(props);
     const {
         open,
         loading,
@@ -45,11 +52,14 @@ const DeleteWithConfirmButton: FC<DeleteWithConfirmButtonProps> = props => {
         handleDialogClose,
         handleDelete,
     } = useDeleteWithConfirmController({
-        resource,
         record,
         redirect,
         basePath,
+        mutationMode,
         onClick,
+        onSuccess,
+        onFailure,
+        resource,
     });
 
     return (
@@ -115,9 +125,10 @@ interface Props {
     classes?: object;
     className?: string;
     confirmTitle?: string;
-    confirmContent?: string;
+    confirmContent?: React.ReactNode;
     icon?: ReactElement;
     label?: string;
+    mutationMode?: MutationMode;
     onClick?: ReactEventHandler<any>;
     record?: Record;
     redirect?: RedirectionSideEffect;
@@ -130,9 +141,11 @@ interface Props {
     saving?: boolean;
     submitOnEnter?: boolean;
     undoable?: boolean;
+    onSuccess?: OnSuccess;
+    onFailure?: OnFailure;
 }
 
-type DeleteWithConfirmButtonProps = Props & ButtonProps;
+export type DeleteWithConfirmButtonProps = Props & ButtonProps;
 
 DeleteWithConfirmButton.propTypes = {
     basePath: PropTypes.string,

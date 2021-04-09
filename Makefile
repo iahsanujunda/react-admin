@@ -4,7 +4,14 @@ help:
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 install: package.json ## install dependencies
-	@yarn
+	@if [ "$(CI)" != "true" ]; then \
+		echo "Full install..."; \
+		yarn; \
+	fi
+	@if [ "$(CI)" = "true" ]; then \
+		echo "Frozen install..."; \
+		yarn --frozen-lockfile; \
+	fi
 
 run: run-simple
 
@@ -33,6 +40,10 @@ build-ra-core:
 	@echo "Transpiling ra-core files...";
 	@cd ./packages/ra-core && yarn -s build
 
+build-ra-test:
+	@echo "Transpiling ra-test files...";
+	@cd ./packages/ra-test && yarn -s build
+
 build-ra-ui-materialui:
 	@echo "Transpiling ra-ui-materialui files...";
 	@cd ./packages/ra-ui-materialui && yarn -s build
@@ -60,6 +71,10 @@ build-ra-data-json-server:
 	@echo "Transpiling ra-data-json-server files...";
 	@cd ./packages/ra-data-json-server && yarn -s build
 
+build-ra-data-localstorage:
+	@echo "Transpiling ra-data-localstorage files...";
+	@cd ./packages/ra-data-localstorage && yarn -s build
+
 build-ra-data-simple-rest:
 	@echo "Transpiling ra-data-simple-rest files...";
 	@cd ./packages/ra-data-simple-rest && yarn -s build
@@ -67,10 +82,6 @@ build-ra-data-simple-rest:
 build-ra-data-graphql:
 	@echo "Transpiling ra-data-graphql files...";
 	@cd ./packages/ra-data-graphql && yarn -s build
-
-build-ra-data-graphcool:
-	@echo "Transpiling ra-data-graphcool files...";
-	@cd ./packages/ra-data-graphcool && yarn -s build
 
 build-ra-data-graphql-simple:
 	@echo "Transpiling ra-data-graphql-simple files...";
@@ -88,7 +99,7 @@ build-data-generator:
 	@echo "Transpiling data-generator files...";
 	@cd ./examples/data-generator && yarn -s build
 
-build: build-ra-core build-ra-ui-materialui build-ra-data-fakerest build-ra-data-json-server build-ra-data-simple-rest build-ra-data-graphql build-ra-data-graphcool build-ra-data-graphql-simple build-ra-i18n-polyglot build-ra-input-rich-text build-data-generator build-ra-language-english build-ra-language-french build-react-admin  ## compile ES6 files to JS
+build: build-ra-core build-ra-test build-ra-ui-materialui build-ra-data-fakerest build-ra-data-json-server build-ra-data-localstorage build-ra-data-simple-rest build-ra-data-graphql build-ra-data-graphql-simple build-ra-i18n-polyglot build-ra-input-rich-text build-data-generator build-ra-language-english build-ra-language-french build-react-admin  ## compile ES6 files to JS
 
 doc: ## compile doc as html and launch doc web server
 	@yarn -s doc

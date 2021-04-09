@@ -1,27 +1,16 @@
 import * as React from 'react';
-import {
-    render,
-    cleanup,
-    act,
-    fireEvent,
-    wait,
-    // @ts-ignore
-    waitForDomChange,
-} from '@testing-library/react';
+import { render, act, fireEvent, waitFor } from '@testing-library/react';
 import expect from 'expect';
 
 import Query from './Query';
 import { CoreAdmin, Resource } from '../core';
-import renderWithRedux from '../util/renderWithRedux';
-import TestContext from '../util/TestContext';
+import { renderWithRedux, TestContext } from 'ra-test';
 import DataProviderContext from './DataProviderContext';
 import { showNotification, refreshView, setListSelectedIds } from '../actions';
 import { useNotify, useRefresh } from '../sideEffect';
 import { History } from 'history';
 
 describe('Query', () => {
-    afterEach(cleanup);
-
     it('should render its child', () => {
         const { getByTestId } = renderWithRedux(
             <Query type="getList" resource="bar">
@@ -91,9 +80,10 @@ describe('Query', () => {
         expect(testElement.textContent).toBe('no data');
         expect(testElement.className).toEqual('loading');
 
-        await waitForDomChange({ container: testElement });
-        expect(testElement.textContent).toEqual('bar');
-        expect(testElement.className).toEqual('idle');
+        await waitFor(() => {
+            expect(testElement.textContent).toEqual('bar');
+            expect(testElement.className).toEqual('idle');
+        });
     });
 
     it('should return the total prop if available', async () => {
@@ -128,9 +118,10 @@ describe('Query', () => {
         expect(testElement.className).toEqual('loading');
         expect(testElement.textContent).toBe('no data');
 
-        await waitForDomChange({ container: testElement });
-        expect(testElement.className).toEqual('idle');
-        expect(testElement.textContent).toEqual('42');
+        await waitFor(() => {
+            expect(testElement.className).toEqual('idle');
+            expect(testElement.textContent).toEqual('42');
+        });
     });
 
     it('should update the error state after an error response', async () => {
@@ -165,9 +156,10 @@ describe('Query', () => {
         expect(testElement.textContent).toBe('no data');
         expect(testElement.className).toEqual('loading');
 
-        await waitForDomChange({ container: testElement });
-        expect(testElement.textContent).toEqual('provider error');
-        expect(testElement.className).toEqual('idle');
+        await waitFor(() => {
+            expect(testElement.textContent).toEqual('provider error');
+            expect(testElement.className).toEqual('idle');
+        });
     });
 
     it('should dispatch a new fetch action when updating', () => {
@@ -261,7 +253,6 @@ describe('Query', () => {
     });
 
     it('supports declarative onSuccess side effects', async () => {
-        expect.assertions(4);
         let dispatchSpy;
         let historyForAssertions: History;
 
@@ -271,9 +262,8 @@ describe('Query', () => {
             ),
         };
 
-        let getByTestId;
         act(() => {
-            const res = render(
+            render(
                 <DataProviderContext.Provider value={dataProvider}>
                     <TestContext>
                         {({ store, history }) => {
@@ -311,21 +301,21 @@ describe('Query', () => {
                     </TestContext>
                 </DataProviderContext.Provider>
             );
-            getByTestId = res.getByTestId;
         });
 
-        const testElement = getByTestId('test');
-        await waitForDomChange({ container: testElement });
-
-        expect(dispatchSpy).toHaveBeenCalledWith(
-            showNotification('Youhou!', 'info', {
-                messageArgs: {},
-                undoable: false,
-            })
-        );
-        expect(historyForAssertions.location.pathname).toEqual('/a_path');
-        expect(dispatchSpy).toHaveBeenCalledWith(refreshView());
-        expect(dispatchSpy).toHaveBeenCalledWith(setListSelectedIds('foo', []));
+        await waitFor(() => {
+            expect(dispatchSpy).toHaveBeenCalledWith(
+                showNotification('Youhou!', 'info', {
+                    messageArgs: {},
+                    undoable: false,
+                })
+            );
+            expect(historyForAssertions.location.pathname).toEqual('/a_path');
+            expect(dispatchSpy).toHaveBeenCalledWith(refreshView());
+            expect(dispatchSpy).toHaveBeenCalledWith(
+                setListSelectedIds('foo', [])
+            );
+        });
     });
 
     it('supports onSuccess function for side effects', async () => {
@@ -359,9 +349,8 @@ describe('Query', () => {
                 </Query>
             );
         };
-        let getByTestId;
         act(() => {
-            const res = render(
+            render(
                 <DataProviderContext.Provider value={dataProvider}>
                     <TestContext>
                         {({ store }) => {
@@ -371,18 +360,16 @@ describe('Query', () => {
                     </TestContext>
                 </DataProviderContext.Provider>
             );
-            getByTestId = res.getByTestId;
         });
 
-        const testElement = getByTestId('test');
-        await waitForDomChange({ container: testElement });
-
-        expect(dispatchSpy).toHaveBeenCalledWith(
-            showNotification('Youhou!', 'info', {
-                messageArgs: {},
-                undoable: false,
-            })
-        );
+        await waitFor(() => {
+            expect(dispatchSpy).toHaveBeenCalledWith(
+                showNotification('Youhou!', 'info', {
+                    messageArgs: {},
+                    undoable: false,
+                })
+            );
+        });
     });
 
     it('supports declarative onFailure side effects', async () => {
@@ -396,9 +383,8 @@ describe('Query', () => {
             ),
         };
 
-        let getByTestId;
         act(() => {
-            const res = render(
+            render(
                 <DataProviderContext.Provider value={dataProvider}>
                     <TestContext>
                         {({ store, history }) => {
@@ -436,21 +422,21 @@ describe('Query', () => {
                     </TestContext>
                 </DataProviderContext.Provider>
             );
-            getByTestId = res.getByTestId;
         });
 
-        const testElement = getByTestId('test');
-        await waitForDomChange({ container: testElement });
-
-        expect(dispatchSpy).toHaveBeenCalledWith(
-            showNotification('Damn!', 'warning', {
-                messageArgs: {},
-                undoable: false,
-            })
-        );
-        expect(historyForAssertions.location.pathname).toEqual('/a_path');
-        expect(dispatchSpy).toHaveBeenCalledWith(refreshView());
-        expect(dispatchSpy).toHaveBeenCalledWith(setListSelectedIds('foo', []));
+        await waitFor(() => {
+            expect(dispatchSpy).toHaveBeenCalledWith(
+                showNotification('Damn!', 'warning', {
+                    messageArgs: {},
+                    undoable: false,
+                })
+            );
+            expect(historyForAssertions.location.pathname).toEqual('/a_path');
+            expect(dispatchSpy).toHaveBeenCalledWith(refreshView());
+            expect(dispatchSpy).toHaveBeenCalledWith(
+                setListSelectedIds('foo', [])
+            );
+        });
     });
 
     it('supports onFailure function for side effects', async () => {
@@ -485,9 +471,8 @@ describe('Query', () => {
                 </Query>
             );
         };
-        let getByTestId;
         act(() => {
-            const res = render(
+            render(
                 <DataProviderContext.Provider value={dataProvider}>
                     <TestContext>
                         {({ store }) => {
@@ -497,23 +482,20 @@ describe('Query', () => {
                     </TestContext>
                 </DataProviderContext.Provider>
             );
-            getByTestId = res.getByTestId;
         });
 
-        const testElement = getByTestId('test');
-        await waitForDomChange({ container: testElement });
-
-        expect(dispatchSpy).toHaveBeenCalledWith(
-            showNotification('Damn!', 'warning', {
-                messageArgs: {},
-                undoable: false,
-            })
-        );
+        await waitFor(() => {
+            expect(dispatchSpy).toHaveBeenCalledWith(
+                showNotification('Damn!', 'warning', {
+                    messageArgs: {},
+                    undoable: false,
+                })
+            );
+        });
     });
 
     it('should fetch again when refreshing', async () => {
         let dispatchSpy;
-        let historyForAssertions: History; // eslint-disable-line @typescript-eslint/no-unused-vars
 
         const dataProvider = {
             mytype: jest.fn(() => Promise.resolve({ data: { foo: 'bar' } })),
@@ -535,7 +517,6 @@ describe('Query', () => {
                     <TestContext enableReducers>
                         {({ store, history }) => {
                             dispatchSpy = jest.spyOn(store, 'dispatch');
-                            historyForAssertions = history;
                             return (
                                 <Query type="mytype" resource="foo">
                                     {() => <Button />}
@@ -548,22 +529,42 @@ describe('Query', () => {
             getByTestId = res.getByTestId;
         });
 
-        await wait();
-        expect(dispatchSpy).toHaveBeenCalledWith({
-            type: 'CUSTOM_FETCH',
-            payload: undefined,
-            meta: { resource: 'foo' },
+        await waitFor(() => {
+            expect(dispatchSpy).toHaveBeenCalledWith({
+                type: 'CUSTOM_FETCH',
+                payload: undefined,
+                meta: { resource: 'foo' },
+            });
         });
-        dispatchSpy.mockClear(); // clar initial fetch
+        dispatchSpy.mockClear(); // clear initial fetch
 
         const testElement = getByTestId('test');
         fireEvent.click(testElement);
-        await wait();
-
-        expect(dispatchSpy).toHaveBeenCalledWith({
-            type: 'CUSTOM_FETCH',
-            payload: undefined,
-            meta: { resource: 'foo' },
+        await waitFor(() => {
+            expect(dispatchSpy).toHaveBeenCalledWith({
+                type: 'CUSTOM_FETCH',
+                payload: undefined,
+                meta: { resource: 'foo' },
+            });
         });
+    });
+
+    it('should allow custom dataProvider methods without resource', () => {
+        const dataProvider = {
+            mytype: jest.fn(() => Promise.resolve({ data: { foo: 'bar' } })),
+        };
+
+        const myPayload = {};
+        const { dispatch } = renderWithRedux(
+            <DataProviderContext.Provider value={dataProvider}>
+                <Query type="mytype" payload={myPayload}>
+                    {() => <div />}
+                </Query>
+            </DataProviderContext.Provider>
+        );
+        const action = dispatch.mock.calls[0][0];
+        expect(action.type).toEqual('CUSTOM_FETCH');
+        expect(action.meta.resource).toBeUndefined();
+        expect(dataProvider.mytype).toHaveBeenCalledWith(myPayload);
     });
 });

@@ -5,9 +5,10 @@ import get from 'lodash/get';
 import { makeStyles } from '@material-ui/core/styles';
 import Typography from '@material-ui/core/Typography';
 import classnames from 'classnames';
+import { useRecordContext } from 'ra-core';
 
-import sanitizeRestProps from './sanitizeRestProps';
-import { FieldProps, InjectedFieldProps, fieldPropTypes } from './types';
+import sanitizeFieldRestProps from './sanitizeFieldRestProps';
+import { PublicFieldProps, InjectedFieldProps, fieldPropTypes } from './types';
 
 const useStyles = makeStyles(
     {
@@ -23,7 +24,7 @@ const useStyles = makeStyles(
     { name: 'RaImageField' }
 );
 
-export interface ImageFieldProps extends FieldProps, InjectedFieldProps {
+export interface ImageFieldProps extends PublicFieldProps, InjectedFieldProps {
     src?: string;
     title?: string;
     classes?: object;
@@ -34,12 +35,12 @@ const ImageField: FC<ImageFieldProps> = props => {
         className,
         classes: classesOverride,
         emptyText,
-        record,
         source,
         src,
         title,
         ...rest
     } = props;
+    const record = useRecordContext(props);
     const sourceValue = get(record, source);
     const classes = useStyles(props);
     if (!sourceValue) {
@@ -48,12 +49,12 @@ const ImageField: FC<ImageFieldProps> = props => {
                 component="span"
                 variant="body2"
                 className={className}
-                {...sanitizeRestProps(rest)}
+                {...sanitizeFieldRestProps(rest)}
             >
                 {emptyText}
             </Typography>
         ) : (
-            <div className={className} {...sanitizeRestProps(rest)} />
+            <div className={className} {...sanitizeFieldRestProps(rest)} />
         );
     }
 
@@ -61,7 +62,7 @@ const ImageField: FC<ImageFieldProps> = props => {
         return (
             <ul
                 className={classnames(classes.list, className)}
-                {...sanitizeRestProps(rest)}
+                {...sanitizeFieldRestProps(rest)}
             >
                 {sourceValue.map((file, index) => {
                     const fileTitleValue = get(file, title) || title;
@@ -85,7 +86,7 @@ const ImageField: FC<ImageFieldProps> = props => {
     const titleValue = get(record, title) || title;
 
     return (
-        <div className={className} {...sanitizeRestProps(rest)}>
+        <div className={className} {...sanitizeFieldRestProps(rest)}>
             <img
                 title={titleValue}
                 alt={titleValue}
@@ -96,7 +97,7 @@ const ImageField: FC<ImageFieldProps> = props => {
     );
 };
 
-// wat? TypeScript looses the displayName if we don't set it explicitly
+// What? TypeScript loses the displayName if we don't set it explicitly
 ImageField.displayName = 'ImageField';
 
 ImageField.defaultProps = {

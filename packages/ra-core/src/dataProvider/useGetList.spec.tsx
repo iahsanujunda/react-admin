@@ -1,10 +1,10 @@
 import * as React from 'react';
-import { cleanup } from '@testing-library/react';
 import expect from 'expect';
 
-import renderWithRedux from '../util/renderWithRedux';
+import { renderWithRedux } from 'ra-test';
 import useGetList from './useGetList';
 import { DataProviderContext } from '../dataProvider';
+import { waitFor } from '@testing-library/react';
 
 const UseGetList = ({
     resource = 'posts',
@@ -21,8 +21,6 @@ const UseGetList = ({
 };
 
 describe('useGetList', () => {
-    afterEach(cleanup);
-
     it('should call dataProvider.getList() on mount', async () => {
         const dataProvider = {
             getList: jest.fn(() =>
@@ -65,9 +63,10 @@ describe('useGetList', () => {
                 <UseGetList />
             </DataProviderContext.Provider>
         );
-        await new Promise(resolve => setTimeout(resolve, 10));
-        expect(dispatch).toBeCalledTimes(5);
-        expect(dataProvider.getList).toBeCalledTimes(1);
+        await waitFor(() => {
+            expect(dispatch).toBeCalledTimes(5);
+            expect(dataProvider.getList).toBeCalledTimes(1);
+        });
     });
 
     it('should call the dataProvider on update when the resource changes', async () => {
@@ -136,11 +135,15 @@ describe('useGetList', () => {
         const dataProvider = {
             getList: jest.fn(() =>
                 Promise.resolve({
-                    data: [{ id: 1, title: 'foo' }, { id: 2, title: 'bar' }],
+                    data: [
+                        { id: 1, title: 'foo' },
+                        { id: 2, title: 'bar' },
+                    ],
                     total: 2,
                 })
             ),
         };
+        await new Promise(setImmediate); // empty the query deduplication in useQueryWithStore
         renderWithRedux(
             <DataProviderContext.Provider value={dataProvider}>
                 <UseGetList callback={hookValue} />
@@ -163,14 +166,18 @@ describe('useGetList', () => {
                 },
             }
         );
-        await new Promise(resolve => setTimeout(resolve, 10));
-        expect(hookValue.mock.calls.pop()[0]).toEqual({
-            data: { 1: { id: 1, title: 'foo' }, 2: { id: 2, title: 'bar' } },
-            ids: [1, 2],
-            total: 2,
-            loading: false,
-            loaded: true,
-            error: null,
+        await waitFor(() => {
+            expect(hookValue.mock.calls.pop()[0]).toEqual({
+                data: {
+                    1: { id: 1, title: 'foo' },
+                    2: { id: 2, title: 'bar' },
+                },
+                ids: [1, 2],
+                total: 2,
+                loading: false,
+                loaded: true,
+                error: null,
+            });
         });
     });
 
@@ -179,7 +186,10 @@ describe('useGetList', () => {
         const dataProvider = {
             getList: jest.fn(() =>
                 Promise.resolve({
-                    data: [{ id: 1, title: 'foo' }, { id: 2, title: 'bar' }],
+                    data: [
+                        { id: 1, title: 'foo' },
+                        { id: 2, title: 'bar' },
+                    ],
                     total: 2,
                 })
             ),
@@ -207,8 +217,9 @@ describe('useGetList', () => {
             }
         );
         expect(hookValue.mock.calls.pop()[0].loading).toBe(true);
-        await new Promise(resolve => setTimeout(resolve, 10));
-        expect(hookValue.mock.calls.pop()[0].loading).toBe(false);
+        await waitFor(() => {
+            expect(hookValue.mock.calls.pop()[0].loading).toBe(false);
+        });
     });
 
     it('should set the loading state depending on the availability of the data in the redux store', () => {
@@ -234,16 +245,18 @@ describe('useGetList', () => {
         const dataProvider = {
             getList: jest.fn(() => Promise.reject(new Error('failed'))),
         };
+        await new Promise(setImmediate); // empty the query deduplication in useQueryWithStore
         renderWithRedux(
             <DataProviderContext.Provider value={dataProvider}>
                 <UseGetList callback={hookValue} />
             </DataProviderContext.Provider>
         );
         expect(hookValue.mock.calls.pop()[0].error).toBe(null);
-        await new Promise(resolve => setTimeout(resolve, 10));
-        expect(hookValue.mock.calls.pop()[0].error).toEqual(
-            new Error('failed')
-        );
+        await waitFor(() => {
+            expect(hookValue.mock.calls.pop()[0].error).toEqual(
+                new Error('failed')
+            );
+        });
     });
 
     it('should execute success side effects on success', async () => {
@@ -263,11 +276,15 @@ describe('useGetList', () => {
                 )
                 .mockReturnValueOnce(
                     Promise.resolve({
-                        data: [{ id: 3, foo: 1 }, { id: 4, foo: 2 }],
+                        data: [
+                            { id: 3, foo: 1 },
+                            { id: 4, foo: 2 },
+                        ],
                         total: 2,
                     })
                 ),
         };
+        await new Promise(setImmediate); // empty the query deduplication in useQueryWithStore
         renderWithRedux(
             <DataProviderContext.Provider value={dataProvider}>
                 <UseGetList options={{ onSuccess: onSuccess1 }} />
@@ -277,16 +294,23 @@ describe('useGetList', () => {
                 />
             </DataProviderContext.Provider>
         );
-        await new Promise(resolve => setTimeout(resolve, 10));
-        expect(onSuccess1).toBeCalledTimes(1);
-        expect(onSuccess1.mock.calls.pop()[0]).toEqual({
-            data: [{ id: 1, title: 'foo' }, { id: 2, title: 'bar' }],
-            total: 2,
-        });
-        expect(onSuccess2).toBeCalledTimes(1);
-        expect(onSuccess2.mock.calls.pop()[0]).toEqual({
-            data: [{ id: 3, foo: 1 }, { id: 4, foo: 2 }],
-            total: 2,
+        await waitFor(() => {
+            expect(onSuccess1).toBeCalledTimes(1);
+            expect(onSuccess1.mock.calls.pop()[0]).toEqual({
+                data: [
+                    { id: 1, title: 'foo' },
+                    { id: 2, title: 'bar' },
+                ],
+                total: 2,
+            });
+            expect(onSuccess2).toBeCalledTimes(1);
+            expect(onSuccess2.mock.calls.pop()[0]).toEqual({
+                data: [
+                    { id: 3, foo: 1 },
+                    { id: 4, foo: 2 },
+                ],
+                total: 2,
+            });
         });
     });
 
@@ -296,13 +320,15 @@ describe('useGetList', () => {
         const dataProvider = {
             getList: jest.fn(() => Promise.reject(new Error('failed'))),
         };
+        await new Promise(setImmediate); // empty the query deduplication in useQueryWithStore
         renderWithRedux(
             <DataProviderContext.Provider value={dataProvider}>
                 <UseGetList options={{ onFailure }} />
             </DataProviderContext.Provider>
         );
-        await new Promise(resolve => setTimeout(resolve, 10));
-        expect(onFailure).toBeCalledTimes(1);
-        expect(onFailure.mock.calls.pop()[0]).toEqual(new Error('failed'));
+        await waitFor(() => {
+            expect(onFailure).toBeCalledTimes(1);
+            expect(onFailure.mock.calls.pop()[0]).toEqual(new Error('failed'));
+        });
     });
 });

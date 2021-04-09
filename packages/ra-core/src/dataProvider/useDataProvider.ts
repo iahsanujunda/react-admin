@@ -3,29 +3,16 @@ import { Dispatch } from 'redux';
 import { useDispatch, useSelector, useStore } from 'react-redux';
 
 import DataProviderContext from './DataProviderContext';
-import validateResponseFormat from './validateResponseFormat';
-import undoableEventEmitter from './undoableEventEmitter';
-import getFetchType from './getFetchType';
 import defaultDataProvider from './defaultDataProvider';
-import { canReplyWithCache, getResultFromCache } from './replyWithCache';
-import {
-    startOptimisticMode,
-    stopOptimisticMode,
-} from '../actions/undoActions';
-import { FETCH_END, FETCH_ERROR, FETCH_START } from '../actions/fetchActions';
-import { showNotification } from '../actions/notificationActions';
-import { refreshView } from '../actions/uiActions';
-import {
-    ReduxState,
-    DataProvider,
-    DataProviderProxy,
-    UseDataProviderOptions,
-} from '../types';
+import { ReduxState, DataProviderProxy } from '../types';
 import useLogoutIfAccessDenied from '../auth/useLogoutIfAccessDenied';
-
-// List of dataProvider calls emitted while in optimistic mode.
-// These calls get replayed once the dataProvider exits optimistic mode
-const optimisticCalls = [];
+import { getDataProviderCallArguments } from './getDataProviderCallArguments';
+import {
+    doQuery,
+    stackCall,
+    stackOptimisticCall,
+    getRemainingStackedCalls,
+} from './performQuery';
 
 /**
  * Hook for getting a dataProvider
@@ -39,14 +26,14 @@ const optimisticCalls = [];
  * In addition to the 2 usual parameters of the dataProvider methods (resource,
  * payload), the Proxy supports a third parameter for every call. It's an
  * object literal which may contain side effects, or make the action optimistic
- * (with undoable: true).
+ * (with mutationMode: optimistic) or undoable (with mutationMode: undoable).
  *
  * @return dataProvider
  *
  * @example Basic usage
  *
  * import * as React from 'react';
-import { useState } from 'react';
+ * import { useState } from 'react';
  * import { useDataProvider } from 'react-admin';
  *
  * const PostList = () => {
@@ -61,7 +48,7 @@ import { useState } from 'react';
  *          <Fragment>
  *              {posts.map((post, key) => <PostDetail post={post} key={key} />)}
  *          </Fragment>
- *     }
+ *     );
  * }
  *
  * @example Handling all states (loading, error, success)
@@ -119,6 +106,7 @@ import { useState } from 'react';
 const useDataProvider = (): DataProviderProxy => {
     const dispatch = useDispatch() as Dispatch;
     const dataProvider = useContext(DataProviderContext) || defaultDataProvider;
+    // optimistic mode can be triggered by a previous optimistic or undoable query
     const isOptimistic = useSelector(
         (state: ReduxState) => state.admin.ui.optimistic
     );
@@ -131,17 +119,22 @@ const useDataProvider = (): DataProviderProxy => {
                 if (typeof name === 'symbol') {
                     return;
                 }
-                return (
-                    resource: string,
-                    payload: any,
-                    options: UseDataProviderOptions
-                ) => {
+                return (...args) => {
+                    const {
+                        resource,
+                        payload,
+                        allArguments,
+                        options,
+                    } = getDataProviderCallArguments(args);
+
                     const type = name.toString();
                     const {
                         action = 'CUSTOM_FETCH',
                         undoable = false,
                         onSuccess = undefined,
                         onFailure = undefined,
+                        mutationMode = undoable ? 'undoable' : 'pessimistic',
+                        enabled = true,
                         ...rest
                     } = options || {};
 
@@ -160,34 +153,61 @@ const useDataProvider = (): DataProviderProxy => {
                             'The onFailure option must be a function'
                         );
                     }
-                    if (undoable && !onSuccess) {
+                    if (mutationMode === 'undoable' && !onSuccess) {
                         throw new Error(
                             'You must pass an onSuccess callback calling notify() to use the undoable mode'
                         );
                     }
+                    if (typeof enabled !== 'boolean') {
+                        throw new Error('The enabled option must be a boolean');
+                    }
+
+                    if (enabled === false) {
+                        return Promise.resolve({});
+                    }
 
                     const params = {
+                        resource,
+                        type,
+                        payload,
                         action,
-                        dataProvider,
-                        dispatch,
-                        logoutIfAccessDenied,
                         onFailure,
                         onSuccess,
-                        payload,
-                        resource,
                         rest,
+                        mutationMode,
+                        // these ones are passed down because of the rules of hooks
+                        dataProvider,
                         store,
-                        type,
-                        undoable,
+                        dispatch,
+                        logoutIfAccessDenied,
+                        allArguments,
                     };
                     if (isOptimistic) {
-                        // in optimistic mode, all fetch calls are stacked, to be
+                        // When in optimistic mode, fetch calls aren't executed
+                        // right away. Instead, they are are stacked, to be
                         // executed once the dataProvider leaves optimistic mode.
                         // In the meantime, the admin uses data from the store.
-                        optimisticCalls.push(params);
-                        return Promise.resolve();
+                        if (
+                            mutationMode === 'undoable' ||
+                            mutationMode === 'optimistic'
+                        ) {
+                            // optimistic and undoable calls are added to a
+                            // specific stack, as they must be replayed first
+                            stackOptimisticCall(params);
+                        } else {
+                            // pessimistic calls are added to the regular stack
+                            // and will be replayed last
+                            stackCall(params);
+                        }
+                        // Return a Promise that only resolves when the optimistic call was made
+                        // otherwise hooks like useQueryWithStore will return loaded = true
+                        // before the content actually reaches the Redux store.
+                        // But as we can't determine when this particular query was finished,
+                        // the Promise resolves only when *all* optimistic queries are done.
+                        return waitFor(() => getRemainingStackedCalls() === 0);
+                    } else {
+                        return doQuery(params);
                     }
-                    return doQuery(params);
                 };
             },
         });
@@ -196,331 +216,18 @@ const useDataProvider = (): DataProviderProxy => {
     return dataProviderProxy;
 };
 
-const doQuery = ({
-    type,
-    payload,
-    resource,
-    action,
-    rest,
-    onSuccess,
-    onFailure,
-    dataProvider,
-    dispatch,
-    store,
-    undoable,
-    logoutIfAccessDenied,
-}) => {
-    const resourceState = store.getState().admin.resources[resource];
-    if (canReplyWithCache(type, payload, resourceState)) {
-        return answerWithCache({
-            type,
-            payload,
-            resource,
-            action,
-            rest,
-            onSuccess,
-            resourceState,
-            dispatch,
-        });
-    }
-    return undoable
-        ? performUndoableQuery({
-              type,
-              payload,
-              resource,
-              action,
-              rest,
-              onSuccess,
-              onFailure,
-              dataProvider,
-              dispatch,
-              logoutIfAccessDenied,
-          })
-        : performQuery({
-              type,
-              payload,
-              resource,
-              action,
-              rest,
-              onSuccess,
-              onFailure,
-              dataProvider,
-              dispatch,
-              logoutIfAccessDenied,
-          });
-};
-
-/**
- * In undoable mode, the hook dispatches an optimistic action and executes
- * the success side effects right away. Then it waits for a few seconds to
- * actually call the dataProvider - unless the user dispatches an Undo action.
- *
- * We call that "optimistic" because the hook returns a resolved Promise
- * immediately (although it has an empty value). That only works if the
- * caller reads the result from the Redux store, not from the Promise.
- */
-const performUndoableQuery = ({
-    type,
-    payload,
-    resource,
-    action,
-    rest,
-    onSuccess,
-    onFailure,
-    dataProvider,
-    dispatch,
-    logoutIfAccessDenied,
-}: QueryFunctionParams) => {
-    dispatch(startOptimisticMode());
-    if (window) {
-        window.addEventListener('beforeunload', warnBeforeClosingWindow);
-    }
-    dispatch({
-        type: action,
-        payload,
-        meta: { resource, ...rest },
+// get a Promise that resolves after a delay in milliseconds
+const later = (delay = 100): Promise<void> =>
+    new Promise(function (resolve) {
+        setTimeout(resolve, delay);
     });
-    dispatch({
-        type: `${action}_OPTIMISTIC`,
-        payload,
-        meta: {
-            resource,
-            fetch: getFetchType(type),
-            optimistic: true,
-        },
-    });
-    onSuccess && onSuccess({});
-    undoableEventEmitter.once('end', ({ isUndo }) => {
-        dispatch(stopOptimisticMode());
-        if (isUndo) {
-            dispatch(showNotification('ra.notification.canceled'));
-            dispatch(refreshView());
-            if (window) {
-                window.removeEventListener(
-                    'beforeunload',
-                    warnBeforeClosingWindow
-                );
-            }
-            return;
-        }
-        dispatch({
-            type: `${action}_LOADING`,
-            payload,
-            meta: { resource, ...rest },
-        });
-        dispatch({ type: FETCH_START });
-        try {
-            dataProvider[type](resource, payload)
-                .then(response => {
-                    if (process.env.NODE_ENV !== 'production') {
-                        validateResponseFormat(response, type);
-                    }
-                    dispatch({
-                        type: `${action}_SUCCESS`,
-                        payload: response,
-                        requestPayload: payload,
-                        meta: {
-                            ...rest,
-                            resource,
-                            fetchResponse: getFetchType(type),
-                            fetchStatus: FETCH_END,
-                        },
-                    });
-                    dispatch({ type: FETCH_END });
-                    if (window) {
-                        window.removeEventListener(
-                            'beforeunload',
-                            warnBeforeClosingWindow
-                        );
-                    }
-                    replayOptimisticCalls();
-                })
-                .catch(error => {
-                    if (window) {
-                        window.removeEventListener(
-                            'beforeunload',
-                            warnBeforeClosingWindow
-                        );
-                    }
-                    if (process.env.NODE_ENV !== 'production') {
-                        console.error(error);
-                    }
-                    return logoutIfAccessDenied(error).then(loggedOut => {
-                        if (loggedOut) return;
-                        dispatch({
-                            type: `${action}_FAILURE`,
-                            error: error.message ? error.message : error,
-                            payload: error.body ? error.body : null,
-                            requestPayload: payload,
-                            meta: {
-                                ...rest,
-                                resource,
-                                fetchResponse: getFetchType(type),
-                                fetchStatus: FETCH_ERROR,
-                            },
-                        });
-                        dispatch({ type: FETCH_ERROR, error });
-                        onFailure && onFailure(error);
-                        throw error;
-                    });
-                });
-        } catch (e) {
-            if (process.env.NODE_ENV !== 'production') {
-                console.error(e);
-            }
-            throw new Error(
-                'The dataProvider threw an error. It should return a rejected Promise instead.'
-            );
-        }
-    });
-    return Promise.resolve({});
-};
 
-// event listener added as window.onbeforeunload when starting optimistic mode, and removed when it ends
-const warnBeforeClosingWindow = event => {
-    event.preventDefault(); // standard
-    event.returnValue = ''; // Chrome
-    return 'Your latest modifications are not yet sent to the server. Are you sure?'; // Old IE
-};
-
-// Replay calls recorded while in optimistic mode
-const replayOptimisticCalls = () => {
-    Promise.all(
-        optimisticCalls.map(params =>
-            Promise.resolve(doQuery.call(null, params))
-        )
+// get a Promise that resolves once a condition is satisfied
+const waitFor = (condition: () => boolean): Promise<void> =>
+    new Promise(resolve =>
+        condition()
+            ? resolve()
+            : later().then(() => waitFor(condition).then(() => resolve()))
     );
-    optimisticCalls.splice(0, optimisticCalls.length);
-};
-
-/**
- * In normal mode, the hook calls the dataProvider. When a successful response
- * arrives, the hook dispatches a SUCCESS action, executes success side effects
- * and returns the response. If the response is an error, the hook dispatches
- * a FAILURE action, executes failure side effects, and throws an error.
- */
-const performQuery = ({
-    type,
-    payload,
-    resource,
-    action,
-    rest,
-    onSuccess,
-    onFailure,
-    dataProvider,
-    dispatch,
-    logoutIfAccessDenied,
-}: QueryFunctionParams) => {
-    dispatch({
-        type: action,
-        payload,
-        meta: { resource, ...rest },
-    });
-    dispatch({
-        type: `${action}_LOADING`,
-        payload,
-        meta: { resource, ...rest },
-    });
-    dispatch({ type: FETCH_START });
-    try {
-        return dataProvider[type](resource, payload)
-            .then(response => {
-                if (process.env.NODE_ENV !== 'production') {
-                    validateResponseFormat(response, type);
-                }
-                dispatch({
-                    type: `${action}_SUCCESS`,
-                    payload: response,
-                    requestPayload: payload,
-                    meta: {
-                        ...rest,
-                        resource,
-                        fetchResponse: getFetchType(type),
-                        fetchStatus: FETCH_END,
-                    },
-                });
-                dispatch({ type: FETCH_END });
-                onSuccess && onSuccess(response);
-                return response;
-            })
-            .catch(error => {
-                if (process.env.NODE_ENV !== 'production') {
-                    console.error(error);
-                }
-                return logoutIfAccessDenied(error).then(loggedOut => {
-                    if (loggedOut) return;
-                    dispatch({
-                        type: `${action}_FAILURE`,
-                        error: error.message ? error.message : error,
-                        payload: error.body ? error.body : null,
-                        requestPayload: payload,
-                        meta: {
-                            ...rest,
-                            resource,
-                            fetchResponse: getFetchType(type),
-                            fetchStatus: FETCH_ERROR,
-                        },
-                    });
-                    dispatch({ type: FETCH_ERROR, error });
-                    onFailure && onFailure(error);
-                    throw error;
-                });
-            });
-    } catch (e) {
-        if (process.env.NODE_ENV !== 'production') {
-            console.error(e);
-        }
-        throw new Error(
-            'The dataProvider threw an error. It should return a rejected Promise instead.'
-        );
-    }
-};
-
-const answerWithCache = ({
-    type,
-    payload,
-    resource,
-    action,
-    rest,
-    onSuccess,
-    resourceState,
-    dispatch,
-}) => {
-    dispatch({
-        type: action,
-        payload,
-        meta: { resource, ...rest },
-    });
-    const response = getResultFromCache(type, payload, resourceState);
-    dispatch({
-        type: `${action}_SUCCESS`,
-        payload: response,
-        requestPayload: payload,
-        meta: {
-            ...rest,
-            resource,
-            fetchResponse: getFetchType(type),
-            fetchStatus: FETCH_END,
-            fromCache: true,
-        },
-    });
-    onSuccess && onSuccess(response);
-    return Promise.resolve(response);
-};
-
-interface QueryFunctionParams {
-    /** The fetch type, e.g. `UPDATE_MANY` */
-    type: string;
-    payload: any;
-    resource: string;
-    /** The root action name, e.g. `CRUD_GET_MANY` */
-    action: string;
-    rest: any;
-    onSuccess?: (args?: any) => void;
-    onFailure?: (error: any) => void;
-    dataProvider: DataProvider;
-    dispatch: Dispatch;
-    logoutIfAccessDenied: (error?: any) => Promise<boolean>;
-}
 
 export default useDataProvider;

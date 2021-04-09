@@ -63,18 +63,54 @@ type Memoize = <T extends (...args: any[]) => any>(
 const memoize: Memoize = (fn: any) =>
     lodashMemoize(fn, (...args) => JSON.stringify(args));
 
-// Compose multiple validators into a single one for use with final-form
-export const composeValidators = (...validators) => (value, values, meta) => {
-    const allValidators = Array.isArray(validators[0])
-        ? validators[0]
-        : validators;
+const isFunction = value => typeof value === 'function';
 
-    return allValidators.reduce(
-        (error, validator) =>
-            error ||
-            (typeof validator === 'function' && validator(value, values, meta)),
-        undefined
-    );
+// Compose multiple validators into a single one for use with final-form
+export const composeValidators = (...validators) => async (
+    value,
+    values,
+    meta
+) => {
+    const allValidators = (Array.isArray(validators[0])
+        ? validators[0]
+        : validators
+    ).filter(isFunction);
+
+    for (const validator of allValidators) {
+        const errorPromise = validator(value, values, meta);
+
+        if (errorPromise) {
+            let error = errorPromise;
+
+            if (errorPromise.then) {
+                error = await errorPromise;
+            }
+
+            if (error) {
+                return error;
+            }
+        }
+    }
+};
+
+// Compose multiple validators into a single one for use with final-form
+export const composeSyncValidators = (...validators) => (
+    value,
+    values,
+    meta
+) => {
+    const allValidators = (Array.isArray(validators[0])
+        ? validators[0]
+        : validators
+    ).filter(isFunction);
+
+    for (const validator of allValidators) {
+        const error = validator(value, values, meta);
+
+        if (error) {
+            return error;
+        }
+    }
 };
 
 /**
@@ -82,7 +118,7 @@ export const composeValidators = (...validators) => (value, values, meta) => {
  *
  * Returns an error if the value is null, undefined, or empty
  *
- * @param {string|function} message
+ * @param {string|Function} message
  *
  * @example
  *
@@ -105,7 +141,7 @@ export const required = memoize((message = 'ra.validation.required') =>
  * Returns an error if the value has a length less than the parameter
  *
  * @param {integer} min
- * @param {string|function} message
+ * @param {string|Function} message
  *
  * @example
  *
@@ -125,7 +161,7 @@ export const minLength = memoize(
  * Returns an error if the value has a length higher than the parameter
  *
  * @param {integer} max
- * @param {string|function} message
+ * @param {string|Function} message
  *
  * @example
  *
@@ -145,7 +181,7 @@ export const maxLength = memoize(
  * Returns an error if the value is less than the parameter
  *
  * @param {integer} min
- * @param {string|function} message
+ * @param {string|Function} message
  *
  * @example
  *
@@ -165,7 +201,7 @@ export const minValue = memoize(
  * Returns an error if the value is higher than the parameter
  *
  * @param {integer} max
- * @param {string|function} message
+ * @param {string|Function} message
  *
  * @example
  *
@@ -184,7 +220,7 @@ export const maxValue = memoize(
  *
  * Returns an error if the value is not a number
  *
- * @param {string|function} message
+ * @param {string|Function} message
  *
  * @example
  *
@@ -204,7 +240,7 @@ export const number = memoize(
  * Returns an error if the value does not match the pattern given as parameter
  *
  * @param {RegExp} pattern
- * @param {string|function} message
+ * @param {string|Function} message
  *
  * @example
  *
@@ -226,7 +262,7 @@ export const regex = lodashMemoize(
  *
  * Returns an error if the value is not a valid email
  *
- * @param {string|function} message
+ * @param {string|Function} message
  *
  * @example
  *
@@ -248,7 +284,7 @@ const oneOfTypeMessage: MessageFunc = ({ args }) => ({
  * Returns an error if the value is not among the list passed as parameter
  *
  * @param {array} list
- * @param {string|function} message
+ * @param {string|Function} message
  *
  * @example
  *

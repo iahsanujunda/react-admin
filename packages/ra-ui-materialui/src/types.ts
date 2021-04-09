@@ -1,46 +1,78 @@
-import { FC, ReactElement, ReactNode } from 'react';
-import { usePermissions, Exporter, Sort } from 'ra-core';
-import { RouteComponentProps } from 'react-router-dom';
-import { StaticContext } from 'react-router';
-import { LocationState } from 'history';
-
-export interface ResourceComponentProps<
-    Params extends { [K in keyof Params]?: string } = {},
-    C extends StaticContext = StaticContext,
-    S = LocationState
-> extends RouteComponentProps<Params, C, S> {
-    resource?: string;
-    basePath?: string;
-    options?: object;
-    hasList?: boolean;
-    hasEdit?: boolean;
-    hasShow?: boolean;
-    hasCreate?: boolean;
-    permissions?: ReturnType<typeof usePermissions>['permissions'];
-}
+import { ReactElement, ElementType } from 'react';
+import {
+    Identifier,
+    Exporter,
+    SortPayload,
+    FilterPayload,
+    Record as RaRecord,
+    ResourceComponentProps,
+    ResourceComponentPropsWithId,
+    MutationMode,
+    OnSuccess,
+    OnFailure,
+} from 'ra-core';
 
 export interface ListProps extends ResourceComponentProps {
-    children: ReactNode;
     actions?: ReactElement | false;
     aside?: ReactElement;
     bulkActionButtons?: ReactElement | false;
     classes?: any;
     className?: string;
-    component?: FC<{ className?: string }>;
-    empty?: ReactElement;
+    component?: ElementType;
+    empty?: ReactElement | false;
     exporter?: Exporter | false;
-    filter?: any;
+    filter?: FilterPayload;
     filterDefaultValues?: any;
     filters?: ReactElement;
     pagination?: ReactElement | false;
     perPage?: number;
-    sort?: Sort;
+    sort?: SortPayload;
+    syncWithLocation?: boolean;
     title?: string | ReactElement;
 }
 
-export interface ResourceMatch {
-    id: string;
-    [k: string]: string;
+export interface EditProps extends ResourceComponentPropsWithId {
+    actions?: ReactElement | false;
+    aside?: ReactElement;
+    classes?: any;
+    className?: string;
+    component?: ElementType;
+    /** @deprecated use mutationMode: undoable instead */
+    undoable?: boolean;
+    mutationMode?: MutationMode;
+    onSuccess?: OnSuccess;
+    onFailure?: OnFailure;
+    transform?: (data: RaRecord) => RaRecord | Promise<RaRecord>;
+    title?: string | ReactElement;
+}
+
+export interface CreateProps extends ResourceComponentProps {
+    actions?: ReactElement | false;
+    aside?: ReactElement;
+    classes?: any;
+    className?: string;
+    component?: ElementType;
+    record?: Partial<RaRecord>;
+    onSuccess?: OnSuccess;
+    onFailure?: OnFailure;
+    transform?: (data: RaRecord) => RaRecord | Promise<RaRecord>;
+    title?: string | ReactElement;
+}
+
+export interface ShowProps extends ResourceComponentPropsWithId {
+    actions?: ReactElement | false;
+    aside?: ReactElement;
+    classes?: any;
+    className?: string;
+    component?: ElementType;
+    title?: string | ReactElement;
+}
+
+export interface BulkActionProps {
+    basePath?: string;
+    filterValues?: any;
+    resource?: string;
+    selectedIds?: Identifier[];
 }
 
 /**

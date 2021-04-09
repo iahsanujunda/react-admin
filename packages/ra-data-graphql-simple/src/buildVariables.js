@@ -25,7 +25,8 @@ const sanitizeValue = (type, value) => {
 };
 
 const castType = (value, type) => {
-    switch (`${type.kind}:${type.name}`) {
+    const realType = type.kind === 'NON_NULL' ? type.ofType : type;
+    switch (`${realType.kind}:${realType.name}`) {
         case 'SCALAR:Int':
             return Number(value);
 
@@ -120,7 +121,7 @@ const buildGetListVariables = introspectionResults => (
                 const type = introspectionResults.types.find(
                     t => t.name === `${resource.type.name}Filter`
                 );
-                const filterSome = type.inputFields.find(
+                const filterSome = type?.inputFields?.find(
                     t => t.name === `${key}_some`
                 );
 
@@ -143,7 +144,7 @@ const buildGetListVariables = introspectionResults => (
                     const type = introspectionResults.types.find(
                         t => t.name === `${resource.type.name}Filter`
                     );
-                    const filterSome = type.inputFields.find(
+                    const filterSome = type?.inputFields?.find(
                         t => t.name === `${parts[0]}_some`
                     );
 

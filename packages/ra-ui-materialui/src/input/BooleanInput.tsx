@@ -7,14 +7,11 @@ import FormGroup, { FormGroupProps } from '@material-ui/core/FormGroup';
 import Switch, { SwitchProps } from '@material-ui/core/Switch';
 import { FieldTitle, useInput, InputProps } from 'ra-core';
 
-import sanitizeRestProps from './sanitizeRestProps';
+import sanitizeInputRestProps from './sanitizeInputRestProps';
 import InputHelperText from './InputHelperText';
 import InputPropTypes from './InputPropTypes';
 
-const BooleanInput: FunctionComponent<
-    InputProps<SwitchProps> &
-        Omit<FormGroupProps, 'defaultValue' | 'onChange' | 'onBlur' | 'onFocus'>
-> = ({
+const BooleanInput: FunctionComponent<BooleanInputProps> = ({
     format,
     label,
     fullWidth,
@@ -34,7 +31,7 @@ const BooleanInput: FunctionComponent<
         id,
         input: { onChange: finalFormOnChange, type, value, ...inputProps },
         isRequired,
-        meta: { error, touched },
+        meta: { error, submitError, touched },
     } = useInput({
         format,
         onBlur,
@@ -56,7 +53,7 @@ const BooleanInput: FunctionComponent<
     );
 
     return (
-        <FormGroup {...sanitizeRestProps(rest)}>
+        <FormGroup {...sanitizeInputRestProps(rest)}>
             <FormControlLabel
                 control={
                     <Switch
@@ -77,10 +74,10 @@ const BooleanInput: FunctionComponent<
                     />
                 }
             />
-            <FormHelperText error={!!error}>
+            <FormHelperText error={!!(error || submitError)}>
                 <InputHelperText
                     touched={touched}
-                    error={error}
+                    error={error || submitError}
                     helperText={helperText}
                 />
             </FormHelperText>
@@ -98,5 +95,8 @@ BooleanInput.propTypes = {
 BooleanInput.defaultProps = {
     options: {},
 };
+
+export type BooleanInputProps = InputProps<SwitchProps> &
+    Omit<FormGroupProps, 'defaultValue' | 'onChange' | 'onBlur' | 'onFocus'>;
 
 export default BooleanInput;

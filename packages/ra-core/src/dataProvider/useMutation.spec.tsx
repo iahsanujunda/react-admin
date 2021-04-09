@@ -1,20 +1,13 @@
 import * as React from 'react';
-import {
-    render,
-    cleanup,
-    fireEvent,
-    waitForDomChange,
-} from '@testing-library/react';
+import { render, fireEvent, waitFor } from '@testing-library/react';
 import expect from 'expect';
 
 import Mutation from './Mutation';
 import { CoreAdmin, Resource } from '../core';
-import renderWithRedux from '../util/renderWithRedux';
+import { renderWithRedux } from 'ra-test';
 import { DataProviderContext } from '.';
 
 describe('useMutation', () => {
-    afterEach(cleanup);
-
     it('should pass a callback to trigger the mutation', () => {
         let callback = null;
         renderWithRedux(
@@ -68,7 +61,7 @@ describe('useMutation', () => {
                     {mutate => (
                         <button
                             onClick={e =>
-                                mutate({ payload: { bar: 2 } }, { baz: 1 })
+                                mutate({ payload: { bar: 2 } }, { meta: 'baz' })
                             }
                         >
                             Hello
@@ -80,7 +73,7 @@ describe('useMutation', () => {
         fireEvent.click(getByText('Hello'));
         const action = dispatch.mock.calls[0][0];
         expect(action.payload).toEqual({ foo: 1, bar: 2 });
-        expect(action.meta.baz).toEqual(1);
+        expect(action.meta.meta).toEqual('baz');
     });
 
     it('should update the loading state when the mutation callback is triggered', () => {
@@ -134,8 +127,9 @@ describe('useMutation', () => {
         const testElement = getByTestId('test');
         expect(testElement.textContent).toBe('no data');
         fireEvent.click(testElement);
-        await waitForDomChange({ container: testElement });
-        expect(testElement.textContent).toEqual('bar');
+        await waitFor(() => {
+            expect(testElement.textContent).toEqual('bar');
+        });
     });
 
     it('should update the error state after an error response', async () => {
@@ -162,7 +156,68 @@ describe('useMutation', () => {
         const testElement = getByTestId('test');
         expect(testElement.textContent).toBe('no data');
         fireEvent.click(testElement);
-        await waitForDomChange({ container: testElement });
-        expect(testElement.textContent).toEqual('provider error');
+        await waitFor(() => {
+            expect(testElement.textContent).toEqual('provider error');
+        });
+    });
+
+    it('should allow custom dataProvider methods without resource', () => {
+        const dataProvider = {
+            mytype: jest.fn(() => Promise.resolve({ data: { foo: 'bar' } })),
+        };
+
+        const myPayload = {};
+        const { getByText, dispatch } = renderWithRedux(
+            <DataProviderContext.Provider value={dataProvider}>
+                <Mutation type="mytype" payload={myPayload}>
+                    {mutate => <button onClick={mutate}>Hello</button>}
+                </Mutation>
+            </DataProviderContext.Provider>
+        );
+        fireEvent.click(getByText('Hello'));
+        const action = dispatch.mock.calls[0][0];
+        expect(action.type).toEqual('CUSTOM_FETCH');
+        expect(action.meta.resource).toBeUndefined();
+        expect(dataProvider.mytype).toHaveBeenCalledWith(myPayload);
+    });
+
+    it('should return a promise to dispatch a fetch action when returnPromise option is set and the mutation callback is triggered', async () => {
+        const dataProvider = {
+            mytype: jest.fn(() => Promise.resolve({ data: { foo: 'bar' } })),
+        };
+
+        let promise = null;
+        const myPayload = {};
+        const { getByText, dispatch } = renderWithRedux(
+            <DataProviderContext.Provider value={dataProvider}>
+                <Mutation
+                    type="mytype"
+                    resource="myresource"
+                    payload={myPayload}
+                    options={{ returnPromise: true }}
+                >
+                    {(mutate, { loading }) => (
+                        <button
+                            className={loading ? 'loading' : 'idle'}
+                            onClick={() => (promise = mutate())}
+                        >
+                            Hello
+                        </button>
+                    )}
+                </Mutation>
+            </DataProviderContext.Provider>
+        );
+        const buttonElement = getByText('Hello');
+        fireEvent.click(buttonElement);
+        const action = dispatch.mock.calls[0][0];
+        expect(action.type).toEqual('CUSTOM_FETCH');
+        expect(action.payload).toEqual(myPayload);
+        expect(action.meta.resource).toEqual('myresource');
+        await waitFor(() => {
+            expect(buttonElement.className).toEqual('idle');
+        });
+        expect(promise).toBeInstanceOf(Promise);
+        const result = await promise;
+        expect(result).toMatchObject({ data: { foo: 'bar' } });
     });
 });

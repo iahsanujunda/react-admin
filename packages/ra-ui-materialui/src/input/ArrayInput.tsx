@@ -1,11 +1,19 @@
 import * as React from 'react';
-import { cloneElement, Children } from 'react';
+import { cloneElement, Children, FC, ReactElement } from 'react';
 import PropTypes from 'prop-types';
-import { isRequired, FieldTitle, composeValidators } from 'ra-core';
+import {
+    isRequired,
+    FieldTitle,
+    composeSyncValidators,
+    InputProps,
+} from 'ra-core';
 import { useFieldArray } from 'react-final-form-arrays';
-import { InputLabel, FormControl } from '@material-ui/core';
+import { InputLabel, FormControl, FormHelperText } from '@material-ui/core';
+import InputHelperText from './InputHelperText';
 
-import sanitizeRestProps from './sanitizeRestProps';
+import sanitizeInputRestProps from './sanitizeInputRestProps';
+import Labeled from './Labeled';
+import { LinearProgress } from '../layout';
 
 /**
  * To edit arrays of data embedded inside a record, <ArrayInput> creates a list of sub-forms.
@@ -48,21 +56,25 @@ import sanitizeRestProps from './sanitizeRestProps';
  *
  * @see https://github.com/final-form/react-final-form-arrays
  */
-const ArrayInput = ({
+const ArrayInput: FC<ArrayInputProps> = ({
     className,
     defaultValue,
     label,
+    loaded,
+    loading,
     children,
+    helperText,
     record,
     resource,
     source,
     validate,
     variant,
+    disabled,
     margin = 'dense',
     ...rest
 }) => {
     const sanitizedValidate = Array.isArray(validate)
-        ? composeValidators(validate)
+        ? composeSyncValidators(validate)
         : validate;
 
     const fieldProps = useFieldArray(source, {
@@ -71,14 +83,34 @@ const ArrayInput = ({
         ...rest,
     });
 
+    if (loading) {
+        return (
+            <Labeled
+                label={label}
+                source={source}
+                resource={resource}
+                className={className}
+            >
+                <LinearProgress />
+            </Labeled>
+        );
+    }
+
+    const { error, submitError, touched } = fieldProps.meta;
+
     return (
         <FormControl
             fullWidth
             margin="normal"
             className={className}
-            {...sanitizeRestProps(rest)}
+            error={touched && !!(error || submitError)}
+            {...sanitizeInputRestProps(rest)}
         >
-            <InputLabel htmlFor={source} shrink>
+            <InputLabel
+                htmlFor={source}
+                shrink
+                error={touched && !!(error || submitError)}
+            >
                 <FieldTitle
                     label={label}
                     source={source}
@@ -86,6 +118,15 @@ const ArrayInput = ({
                     isRequired={isRequired(validate)}
                 />
             </InputLabel>
+            {!!(touched && (error || submitError)) || helperText ? (
+                <FormHelperText error={touched && !!(error || submitError)}>
+                    <InputHelperText
+                        touched={touched}
+                        error={error || submitError}
+                        helperText={helperText}
+                    />
+                </FormHelperText>
+            ) : null}
             {cloneElement(Children.only(children), {
                 ...fieldProps,
                 record,
@@ -93,17 +134,20 @@ const ArrayInput = ({
                 source,
                 variant,
                 margin,
+                disabled,
             })}
         </FormControl>
     );
 };
 
 ArrayInput.propTypes = {
+    // @ts-ignore
     children: PropTypes.node,
     className: PropTypes.string,
     defaultValue: PropTypes.any,
     isRequired: PropTypes.bool,
     label: PropTypes.string,
+    helperText: PropTypes.string,
     resource: PropTypes.string,
     source: PropTypes.string,
     record: PropTypes.object,
@@ -118,4 +162,9 @@ ArrayInput.defaultProps = {
     options: {},
     fullWidth: true,
 };
+
+export interface ArrayInputProps extends InputProps {
+    children: ReactElement;
+    disabled?: boolean;
+}
 export default ArrayInput;

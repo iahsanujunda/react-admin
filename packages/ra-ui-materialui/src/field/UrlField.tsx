@@ -1,38 +1,39 @@
 import * as React from 'react';
-import { FC, HtmlHTMLAttributes, memo } from 'react';
+import { FC, AnchorHTMLAttributes, memo } from 'react';
 import get from 'lodash/get';
-import sanitizeRestProps from './sanitizeRestProps';
+import sanitizeFieldRestProps from './sanitizeFieldRestProps';
 import { Typography, Link } from '@material-ui/core';
-import { FieldProps, InjectedFieldProps, fieldPropTypes } from './types';
+import { useRecordContext } from 'ra-core';
+import { PublicFieldProps, InjectedFieldProps, fieldPropTypes } from './types';
 
-const UrlField: FC<UrlFieldProps> = memo<UrlFieldProps>(
-    ({ className, emptyText, source, record = {}, ...rest }) => {
-        const value = get(record, source);
+const UrlField: FC<UrlFieldProps> = memo<UrlFieldProps>(props => {
+    const { className, emptyText, source, ...rest } = props;
+    const record = useRecordContext(props);
+    const value = get(record, source);
 
-        if (value == null && emptyText) {
-            return (
-                <Typography
-                    component="span"
-                    variant="body2"
-                    className={className}
-                    {...sanitizeRestProps(rest)}
-                >
-                    {emptyText}
-                </Typography>
-            );
-        }
-
+    if (value == null && emptyText) {
         return (
-            <Link
+            <Typography
+                component="span"
+                variant="body2"
                 className={className}
-                href={value}
-                {...sanitizeRestProps(rest)}
+                {...sanitizeFieldRestProps(rest)}
             >
-                {value}
-            </Link>
+                {emptyText}
+            </Typography>
         );
     }
-);
+
+    return (
+        <Link
+            className={className}
+            href={value}
+            {...sanitizeFieldRestProps(rest)}
+        >
+            {value}
+        </Link>
+    );
+});
 
 UrlField.defaultProps = {
     addLabel: true,
@@ -42,8 +43,8 @@ UrlField.propTypes = fieldPropTypes;
 UrlField.displayName = 'UrlField';
 
 export interface UrlFieldProps
-    extends FieldProps,
+    extends PublicFieldProps,
         InjectedFieldProps,
-        HtmlHTMLAttributes<HTMLAnchorElement> {}
+        AnchorHTMLAttributes<HTMLAnchorElement> {}
 
 export default UrlField;

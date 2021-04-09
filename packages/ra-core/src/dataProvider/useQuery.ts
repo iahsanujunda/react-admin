@@ -1,8 +1,10 @@
 import { useEffect } from 'react';
 
 import { useSafeSetState } from '../util/hooks';
+import { OnSuccess, OnFailure } from '../types';
 import useDataProvider from './useDataProvider';
 import useDataProviderWithDeclarativeSideEffects from './useDataProviderWithDeclarativeSideEffects';
+import { DeclarativeSideEffect } from './useDeclarativeSideEffects';
 import useVersion from '../controller/useVersion';
 
 /**
@@ -20,9 +22,10 @@ import useVersion from '../controller/useVersion';
  * @param {Object} query.payload The payload object, e.g; { post_id: 12 }
  * @param {Object} options
  * @param {string} options.action Redux action type
- * @param {Function} options.onSuccess Side effect function to be executed upon success of failure, e.g. { onSuccess: response => refresh() } }
- * @param {Function} options.onFailure Side effect function to be executed upon failure, e.g. { onFailure: error => notify(error.message) } }
- * @param {boolean} options.withDeclarativeSideEffectsSupport Set to true to support legacy side effects (e.g. { onSuccess: { refresh: true } })
+ * @param {boolean} options.enabled Flag to conditionally run the query. True by default. If it's false, the query will not run
+ * @param {Function} options.onSuccess Side effect function to be executed upon success, e.g. () => refresh()
+ * @param {Function} options.onFailure Side effect function to be executed upon failure, e.g. (error) => notify(error.message)
+ * @param {boolean} options.withDeclarativeSideEffectsSupport Set to true to support legacy side effects e.g. { onSuccess: { refresh: true } }
  *
  * @returns The current request state. Destructure as { data, total, error, loading, loaded }.
  *
@@ -67,11 +70,18 @@ import useVersion from '../controller/useVersion';
  *     );
  * };
  */
-const useQuery = (query: Query, options: QueryOptions = {}): UseQueryValue => {
+const useQuery = (
+    query: Query,
+    options: QueryOptions = { onSuccess: undefined }
+): UseQueryValue => {
     const { type, resource, payload } = query;
-    const { withDeclarativeSideEffectsSupport, ...rest } = options;
+    const { withDeclarativeSideEffectsSupport, ...otherOptions } = options;
     const version = useVersion(); // used to allow force reload
-    const requestSignature = JSON.stringify({ query, options: rest, version });
+    const requestSignature = JSON.stringify({
+        query,
+        options: otherOptions,
+        version,
+    });
     const [state, setState] = useSafeSetState<UseQueryValue>({
         data: undefined,
         error: null,
@@ -89,13 +99,19 @@ const useQuery = (query: Query, options: QueryOptions = {}): UseQueryValue => {
          *
          * @deprecated to be removed in 4.0
          */
-        const dataProviderWithSideEffects = withDeclarativeSideEffectsSupport
+        const finalDataProvider = withDeclarativeSideEffectsSupport
             ? dataProviderWithDeclarativeSideEffects
             : dataProvider;
 
         setState(prevState => ({ ...prevState, loading: true }));
 
-        dataProviderWithSideEffects[type](resource, payload, rest)
+        finalDataProvider[type]
+            .apply(
+                finalDataProvider,
+                typeof resource !== 'undefined'
+                    ? [resource, payload, otherOptions]
+                    : [payload, otherOptions]
+            )
             .then(({ data, total }) => {
                 setState({
                     data,
@@ -124,14 +140,15 @@ const useQuery = (query: Query, options: QueryOptions = {}): UseQueryValue => {
 
 export interface Query {
     type: string;
-    resource: string;
+    resource?: string;
     payload: object;
 }
 
 export interface QueryOptions {
     action?: string;
-    onSuccess?: (response: any) => any | Object;
-    onError?: (error?: any) => any | Object;
+    enabled?: boolean;
+    onSuccess?: OnSuccess | DeclarativeSideEffect;
+    onFailure?: OnFailure | DeclarativeSideEffect;
     withDeclarativeSideEffectsSupport?: boolean;
 }
 

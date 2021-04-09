@@ -1,20 +1,29 @@
 import * as React from 'react';
 import { FC } from 'react';
-import Chip from '@material-ui/core/Chip';
+import { Box, Chip, useMediaQuery, Theme } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
-import { InputProps } from 'ra-core';
 import {
+    CreateButton,
+    ExportButton,
     Filter,
-    List,
+    FilterProps,
+    InputProps,
+    ListBase,
+    ListProps,
     NumberInput,
     Pagination,
     ReferenceInput,
     SearchInput,
     SelectInput,
+    SortButton,
+    Title,
+    TopToolbar,
+    useListContext,
     useTranslate,
 } from 'react-admin';
-import { FilterProps, ListComponentProps } from '../types';
+
 import GridList from './GridList';
+import Aside from './Aside';
 
 const useQuickFilterStyles = makeStyles(theme => ({
     root: {
@@ -28,17 +37,7 @@ const QuickFilter: FC<InputProps> = ({ label }) => {
     return <Chip className={classes.root} label={translate(label)} />;
 };
 
-interface FilterParams {
-    q?: string;
-    category_id?: string;
-    width_gte?: number;
-    width_lte?: number;
-    height_gte?: number;
-    height_lte?: number;
-    stock_lte?: number;
-}
-
-export const ProductFilter: FC<FilterProps<FilterParams>> = props => (
+export const ProductFilter: FC<Omit<FilterProps, 'children'>> = props => (
     <Filter {...props}>
         <SearchInput source="q" alwaysOn />
         <ReferenceInput
@@ -60,16 +59,47 @@ export const ProductFilter: FC<FilterProps<FilterParams>> = props => (
     </Filter>
 );
 
-const ProductList: FC<ListComponentProps> = props => (
-    <List
-        {...props}
-        filters={<ProductFilter />}
-        perPage={20}
-        pagination={<Pagination rowsPerPageOptions={[10, 20, 40]} />}
-        sort={{ field: 'reference', order: 'ASC' }}
-    >
-        <GridList />
-    </List>
+const ListActions: FC<any> = ({ isSmall }) => (
+    <TopToolbar>
+        {isSmall && <ProductFilter context="button" />}
+        <SortButton fields={['reference', 'sales', 'stock']} />
+        <CreateButton basePath="/products" />
+        <ExportButton />
+    </TopToolbar>
 );
 
+const ProductList: FC<ListProps> = props => {
+    const isSmall = useMediaQuery<Theme>(theme => theme.breakpoints.down('sm'));
+    return (
+        <ListBase
+            perPage={20}
+            sort={{ field: 'reference', order: 'ASC' }}
+            {...props}
+        >
+            <ProductListView isSmall={isSmall} />
+        </ListBase>
+    );
+};
+
+const ProductListView: FC<{ isSmall: boolean }> = ({ isSmall }) => {
+    const { defaultTitle } = useListContext();
+    return (
+        <>
+            <Title defaultTitle={defaultTitle} />
+            <ListActions isSmall={isSmall} />
+            {isSmall && (
+                <Box m={1}>
+                    <ProductFilter context="form" />
+                </Box>
+            )}
+            <Box display="flex">
+                <Aside />
+                <Box width={isSmall ? 'auto' : 'calc(100% - 16em)'}>
+                    <GridList />
+                    <Pagination rowsPerPageOptions={[10, 20, 40]} />
+                </Box>
+            </Box>
+        </>
+    );
+};
 export default ProductList;

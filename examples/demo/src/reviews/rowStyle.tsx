@@ -1,15 +1,18 @@
 import green from '@material-ui/core/colors/green';
 import orange from '@material-ui/core/colors/orange';
 import red from '@material-ui/core/colors/red';
-import { Theme } from '@material-ui/core';
-import { Review } from './../types';
-import { Identifier } from 'ra-core';
+import { useTheme } from '@material-ui/core/styles';
+import { Identifier } from 'react-admin';
 
-const rowStyle = (selectedRow: Identifier, theme: Theme) => (
-    record: Review
-) => {
+import { Review } from './../types';
+
+const rowStyle = (selectedRow?: Identifier) => (record: Review) => {
+    const theme = useTheme();
     let style = {};
-    if (selectedRow === record.id) {
+    if (!record) {
+        return style;
+    }
+    if (selectedRow && selectedRow === record.id) {
         style = {
             ...style,
             backgroundColor: theme.palette.action.selected,

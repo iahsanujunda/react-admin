@@ -6,7 +6,7 @@ import { TextFieldProps } from '@material-ui/core/TextField';
 
 import ResettableTextField from './ResettableTextField';
 import InputHelperText from './InputHelperText';
-import sanitizeRestProps from './sanitizeRestProps';
+import sanitizeInputRestProps from './sanitizeInputRestProps';
 
 export type TextInputProps = InputProps<TextFieldProps> &
     Omit<TextFieldProps, 'label' | 'helperText'>;
@@ -43,7 +43,7 @@ const TextInput: FunctionComponent<TextInputProps> = ({
         id,
         input,
         isRequired,
-        meta: { error, touched },
+        meta: { error, submitError, touched },
     } = useInput({
         format,
         onBlur,
@@ -72,16 +72,16 @@ const TextInput: FunctionComponent<TextInputProps> = ({
                     />
                 )
             }
-            error={!!(touched && error)}
+            error={!!(touched && (error || submitError))}
             helperText={
                 <InputHelperText
                     touched={touched}
-                    error={error}
+                    error={error || submitError}
                     helperText={helperText}
                 />
             }
             {...options}
-            {...sanitizeRestProps(rest)}
+            {...sanitizeInputRestProps(rest)}
         />
     );
 };

@@ -1,11 +1,11 @@
 import * as React from 'react';
 import expect from 'expect';
-import { render, cleanup, getNodeText } from '@testing-library/react';
+import { render, getNodeText } from '@testing-library/react';
+import { RecordContextProvider } from 'ra-core';
+
 import TextField from './TextField';
 
 describe('<TextField />', () => {
-    afterEach(cleanup);
-
     it('should display record specific value as plain text', () => {
         const record = {
             id: 123,
@@ -13,6 +13,20 @@ describe('<TextField />', () => {
         };
         const { queryByText } = render(
             <TextField record={record} source="title" />
+        );
+        expect(
+            queryByText("I'm sorry, Dave. I'm afraid I can't do that.")
+        ).not.toBeNull();
+    });
+    it('should use record from RecordContext', () => {
+        const record = {
+            id: 123,
+            title: "I'm sorry, Dave. I'm afraid I can't do that.",
+        };
+        const { queryByText } = render(
+            <RecordContextProvider value={record}>
+                <TextField source="title" />
+            </RecordContextProvider>
         );
         expect(
             queryByText("I'm sorry, Dave. I'm afraid I can't do that.")

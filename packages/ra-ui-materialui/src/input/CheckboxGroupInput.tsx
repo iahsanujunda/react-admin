@@ -8,32 +8,15 @@ import FormGroup from '@material-ui/core/FormGroup';
 import FormHelperText from '@material-ui/core/FormHelperText';
 import { makeStyles } from '@material-ui/core/styles';
 import { CheckboxProps } from '@material-ui/core/Checkbox';
-import { FieldTitle, useInput, InputProps, ChoicesProps } from 'ra-core';
+import { FieldTitle, useInput, ChoicesInputProps, warning } from 'ra-core';
 
-import defaultSanitizeRestProps from './sanitizeRestProps';
+import sanitizeInputRestProps from './sanitizeInputRestProps';
 import CheckboxGroupInputItem from './CheckboxGroupInputItem';
 import InputHelperText from './InputHelperText';
-
-const sanitizeRestProps = ({
-    setFilter,
-    setPagination,
-    setSort,
-    loaded,
-    ...rest
-}: any) => defaultSanitizeRestProps(rest);
-
-const useStyles = makeStyles(
-    theme => ({
-        root: {},
-        label: {
-            transform: 'translate(0, 8px) scale(0.75)',
-            transformOrigin: `top ${
-                theme.direction === 'ltr' ? 'left' : 'right'
-            }`,
-        },
-    }),
-    { name: 'RaCheckboxGroupInput' }
-);
+import classnames from 'classnames';
+import Labeled from './Labeled';
+import { LinearProgress } from '../layout';
+import { ClassesOverride } from '../types';
 
 /**
  * An Input component for a checkbox group, using an array of objects for the options
@@ -45,7 +28,7 @@ const useStyles = makeStyles(
  *
  * By default, the options are built from:
  *  - the 'id' property as the option value,
- *  - the 'name' property an the option text
+ *  - the 'name' property as the option text
  * @example
  * const choices = [
  *     { id: 12, name: 'Ray Hakt' },
@@ -90,22 +73,23 @@ const useStyles = makeStyles(
  *    { id: 'photography', name: 'myroot.category.photography' },
  * ];
  *
- * However, in some cases (e.g. inside a `<ReferenceInput>`), you may not want
+ * However, in some cases (e.g. inside a `<ReferenceArrayInput>`), you may not want
  * the choice to be translated. In that case, set the `translateChoice` prop to false.
  * @example
  * <CheckboxGroupInput source="gender" choices={choices} translateChoice={false}/>
  *
  * The object passed as `options` props is passed to the material-ui <Checkbox> components
  */
-const CheckboxGroupInput: FunctionComponent<
-    ChoicesProps & InputProps<CheckboxProps> & FormControlProps
-> = props => {
+const CheckboxGroupInput: FunctionComponent<CheckboxGroupInputProps> = props => {
     const {
         choices = [],
+        className,
         classes: classesOverride,
         format,
         helperText,
         label,
+        loaded,
+        loading,
         margin = 'dense',
         onBlur,
         onChange,
@@ -124,11 +108,21 @@ const CheckboxGroupInput: FunctionComponent<
     } = props;
     const classes = useStyles(props);
 
+    warning(
+        source === undefined,
+        `If you're not wrapping the CheckboxGroupInput inside a ReferenceArrayInput, you must provide the source prop`
+    );
+
+    warning(
+        choices === undefined,
+        `If you're not wrapping the CheckboxGroupInput inside a ReferenceArrayInput, you must provide the choices prop`
+    );
+
     const {
         id,
         input: { onChange: finalFormOnChange, onBlur: finalFormOnBlur, value },
         isRequired,
-        meta: { error, touched },
+        meta: { error, submitError, touched },
     } = useInput({
         format,
         onBlur,
@@ -161,11 +155,26 @@ const CheckboxGroupInput: FunctionComponent<
         [finalFormOnChange, finalFormOnBlur, value]
     );
 
+    if (loading) {
+        return (
+            <Labeled
+                label={label}
+                source={source}
+                resource={resource}
+                className={className}
+                isRequired={isRequired}
+            >
+                <LinearProgress />
+            </Labeled>
+        );
+    }
+
     return (
         <FormControl
             component="fieldset"
             margin={margin}
-            error={touched && !!error}
+            error={touched && !!(error || submitError)}
+            className={classnames(classes.root, className)}
             {...sanitizeRestProps(rest)}
         >
             <FormLabel component="legend" className={classes.label}>
@@ -194,13 +203,35 @@ const CheckboxGroupInput: FunctionComponent<
             <FormHelperText>
                 <InputHelperText
                     touched={touched}
-                    error={error}
+                    error={error || submitError}
                     helperText={helperText}
                 />
             </FormHelperText>
         </FormControl>
     );
 };
+
+const sanitizeRestProps = ({
+    setFilter,
+    setPagination,
+    setSort,
+    loaded,
+    touched,
+    ...rest
+}: any) => sanitizeInputRestProps(rest);
+
+const useStyles = makeStyles(
+    theme => ({
+        root: {},
+        label: {
+            transform: 'translate(0, 8px) scale(0.75)',
+            transformOrigin: `top ${
+                theme.direction === 'ltr' ? 'left' : 'right'
+            }`,
+        },
+    }),
+    { name: 'RaCheckboxGroupInput' }
+);
 
 CheckboxGroupInput.propTypes = {
     choices: PropTypes.arrayOf(PropTypes.object),
@@ -227,5 +258,11 @@ CheckboxGroupInput.defaultProps = {
     fullWidth: true,
     row: true,
 };
+
+export interface CheckboxGroupInputProps
+    extends ChoicesInputProps<CheckboxProps>,
+        FormControlProps {
+    classes?: ClassesOverride<typeof useStyles>;
+}
 
 export default CheckboxGroupInput;

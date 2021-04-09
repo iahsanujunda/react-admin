@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { render, cleanup, fireEvent } from '@testing-library/react';
+import { render, fireEvent } from '@testing-library/react';
 import { Form } from 'react-final-form';
 
 import TextInput from './TextInput';
@@ -10,8 +10,6 @@ describe('<TextInput />', () => {
         source: 'title',
         resource: 'posts',
     };
-
-    afterEach(cleanup);
 
     it('should render the input correctly', () => {
         const { getByLabelText } = render(
@@ -66,7 +64,7 @@ describe('<TextInput />', () => {
 
             const input = getByLabelText('resources.posts.fields.title *');
             fireEvent.change(input, { target: { value: 'test' } });
-            fireEvent.blur(input);
+            input.blur();
             const error = queryByText('ra.validation.required');
             expect(error).toBeNull();
         });
@@ -82,7 +80,8 @@ describe('<TextInput />', () => {
             );
 
             const input = getByLabelText('resources.posts.fields.title *');
-            fireEvent.blur(input);
+            input.focus();
+            input.blur();
             const error = queryByText('ra.validation.required');
             expect(error).not.toBeNull();
         });

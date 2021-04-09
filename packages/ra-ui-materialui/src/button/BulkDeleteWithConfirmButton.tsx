@@ -12,11 +12,12 @@ import {
     useNotify,
     useUnselectAll,
     CRUD_DELETE_MANY,
-    Identifier,
+    useResourceContext,
 } from 'ra-core';
 
 import Confirm from '../layout/Confirm';
 import Button, { ButtonProps } from './Button';
+import { BulkActionProps } from '../types';
 
 const useStyles = makeStyles(
     theme => ({
@@ -34,18 +35,17 @@ const useStyles = makeStyles(
     { name: 'RaBulkDeleteWithConfirmButton' }
 );
 
-const BulkDeleteWithConfirmButton: FC<
-    BulkDeleteWithConfirmButtonProps
-> = props => {
+const defaultIcon = <ActionDelete />;
+
+const BulkDeleteWithConfirmButton: FC<BulkDeleteWithConfirmButtonProps> = props => {
     const {
         basePath,
         classes: classesOverride,
-        confirmTitle,
-        confirmContent,
-        icon,
+        confirmTitle = 'ra.message.bulk_delete_title',
+        confirmContent = 'ra.message.bulk_delete_content',
+        icon = defaultIcon,
         label,
         onClick,
-        resource,
         selectedIds,
         ...rest
     } = props;
@@ -55,6 +55,7 @@ const BulkDeleteWithConfirmButton: FC<
     const unselectAll = useUnselectAll();
     const refresh = useRefresh();
     const translate = useTranslate();
+    const resource = useResourceContext(props);
     const [deleteMany, { loading }] = useDeleteMany(resource, selectedIds, {
         action: CRUD_DELETE_MANY,
         onSuccess: () => {
@@ -69,7 +70,15 @@ const BulkDeleteWithConfirmButton: FC<
                 typeof error === 'string'
                     ? error
                     : error.message || 'ra.notification.http_error',
-                'warning'
+                'warning',
+                {
+                    _:
+                        typeof error === 'string'
+                            ? error
+                            : error && error.message
+                            ? error.message
+                            : undefined,
+                }
             );
             setOpen(false);
         },
@@ -141,17 +150,13 @@ const sanitizeRestProps = ({
     'resource' | 'selectedIds' | 'icon'
 >) => rest;
 
-interface Props {
-    basePath?: string;
-    confirmContent?: string;
+export interface BulkDeleteWithConfirmButtonProps
+    extends BulkActionProps,
+        ButtonProps {
+    confirmContent?: React.ReactNode;
     confirmTitle?: string;
-    filterValues?: any;
-    icon: ReactElement;
-    resource: string;
-    selectedIds: Identifier[];
+    icon?: ReactElement;
 }
-
-export type BulkDeleteWithConfirmButtonProps = Props & ButtonProps;
 
 BulkDeleteWithConfirmButton.propTypes = {
     basePath: PropTypes.string,
@@ -159,16 +164,13 @@ BulkDeleteWithConfirmButton.propTypes = {
     confirmTitle: PropTypes.string,
     confirmContent: PropTypes.string,
     label: PropTypes.string,
-    resource: PropTypes.string.isRequired,
+    resource: PropTypes.string,
     selectedIds: PropTypes.arrayOf(PropTypes.any).isRequired,
     icon: PropTypes.element,
 };
 
 BulkDeleteWithConfirmButton.defaultProps = {
-    confirmTitle: 'ra.message.bulk_delete_title',
-    confirmContent: 'ra.message.bulk_delete_content',
     label: 'ra.action.delete',
-    icon: <ActionDelete />,
 };
 
 export default BulkDeleteWithConfirmButton;

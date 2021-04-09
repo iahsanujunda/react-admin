@@ -5,7 +5,9 @@ import {
     DateField,
     DateInput,
     Filter,
+    FilterProps,
     List,
+    ListProps,
     NullableBooleanInput,
     NumberField,
     SearchInput,
@@ -19,8 +21,9 @@ import CustomerLinkField from './CustomerLinkField';
 import ColoredNumberField from './ColoredNumberField';
 import MobileGrid from './MobileGrid';
 import VisitorListAside from './VisitorListAside';
+import { ReactElement } from 'react';
 
-const VisitorFilter = (props: any) => (
+const VisitorFilter = (props: Omit<FilterProps, 'children'>) => (
     <Filter {...props}>
         <SearchInput source="q" alwaysOn />
         <DateInput source="last_seen_gte" />
@@ -30,11 +33,17 @@ const VisitorFilter = (props: any) => (
     </Filter>
 );
 
-const useStyles = makeStyles({
+const useStyles = makeStyles(theme => ({
     nb_commands: { color: 'purple' },
-});
+    hiddenOnSmallScreens: {
+        display: 'table-cell',
+        [theme.breakpoints.down('md')]: {
+            display: 'none',
+        },
+    },
+}));
 
-const VisitorList = (props: any) => {
+const VisitorList = (props: ListProps): ReactElement => {
     const classes = useStyles();
     const isXsmall = useMediaQuery<Theme>(theme =>
         theme.breakpoints.down('xs')
@@ -43,7 +52,7 @@ const VisitorList = (props: any) => {
     return (
         <List
             {...props}
-            filters={isSmall ? <VisitorFilter /> : null}
+            filters={isSmall ? <VisitorFilter /> : undefined}
             sort={{ field: 'last_seen', order: 'DESC' }}
             perPage={25}
             aside={<VisitorListAside />}
@@ -53,7 +62,7 @@ const VisitorList = (props: any) => {
             ) : (
                 <Datagrid optimized rowClick="edit">
                     <CustomerLinkField />
-                    <DateField source="last_seen" type="date" />
+                    <DateField source="last_seen" />
                     <NumberField
                         source="nb_commands"
                         label="resources.customers.fields.commands"
@@ -64,12 +73,11 @@ const VisitorList = (props: any) => {
                         options={{ style: 'currency', currency: 'USD' }}
                     />
                     <DateField source="latest_purchase" showTime />
-                    <BooleanField
-                        source="has_newsletter"
-                        label="News."
-                        size="small"
+                    <BooleanField source="has_newsletter" label="News." />
+                    <SegmentsField
+                        cellClassName={classes.hiddenOnSmallScreens}
+                        headerClassName={classes.hiddenOnSmallScreens}
                     />
-                    <SegmentsField />
                 </Datagrid>
             )}
         </List>

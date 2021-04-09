@@ -11,11 +11,11 @@ Whether you need to adjust a CSS rule for a single component, or change the colo
 
 Every react-admin component provides a `className` property, which is always applied to the root element.
 
-Here is an example customizing an `EditButton` component inside a `Datagrid`, using its `className` property and the `makeStyle` hook from Material-UI:
+Here is an example customizing an `EditButton` component inside a `Datagrid`, using its `className` property and the `makeStyles` hook from Material-UI:
 
 {% raw %}
 ```jsx
-import * as React from "react";
+import * as React from 'react';
 import { NumberField, List, Datagrid, TextField, EditButton } from 'react-admin';
 import { makeStyles } from '@material-ui/core/styles';
 
@@ -50,7 +50,7 @@ Here is an example using the `classes` property of the `Filter` and `List` compo
 
 {% raw %}
 ```jsx
-import * as React from "react";
+import * as React from 'react';
 import {
     BooleanField,
     Datagrid,
@@ -146,7 +146,7 @@ Sometimes you want the format to depend on the value. The following example show
 
 {% raw %}
 ```jsx
-import * as React from "react";
+import * as React from 'react';
 import { NumberField, List, Datagrid, TextField, EditButton } from 'react-admin';
 import { makeStyles } from '@material-ui/core/styles';
 import classnames from 'classnames';
@@ -189,7 +189,7 @@ Furthermore, you may extract this highlighting strategy into a Higher Order Comp
 
 {% raw %}
 ```jsx
-import * as React from "react";
+import * as React from 'react';
 import { NumberField, List, Datagrid, TextField, EditButton } from 'react-admin';
 import { makeStyles } from '@material-ui/core/styles';
 import classnames from 'classnames';
@@ -232,9 +232,9 @@ export const PostList = (props) => (
 
 If you want to read more about higher-order components, check out this SitePoint tutorial: [Higher Order Components: A React Application Design Pattern](https://www.sitepoint.com/react-higher-order-components/)
 
-## useMediaQuery Hook
+## `useMediaQuery` Hook
 
-To provide an optimized experience on mobile, tablet, and desktop devices, you often need to display different components depending on the screen size. Material-ui provides a hook dedicated to help such responsive layouts: [`useMediaQuery`](https://material-ui.com/components/use-media-query/#usemediaquery).
+To provide an optimized experience on mobile, tablet, and desktop devices, you often need to display different components depending on the screen size. Material-ui provides a hook dedicated to help such responsive layouts: [useMediaQuery](https://material-ui.com/components/use-media-query/#usemediaquery).
 
 It expects a function receiving the material-ui theme as a parameter, and returning a media query. Use the theme breakpoints to check for common screen sizes. The hook returns a boolean indicating if the current screen matches the media query or not.
 
@@ -244,7 +244,7 @@ const isSmall = useMediaQuery(theme => theme.breakpoints.down('sm'));
 const isDesktop = useMediaQuery(theme => theme.breakpoints.up('md'));
 ```
 
-You can also pass a custom media query as a screen. 
+You can also pass a custom media query as a screen.
 
 ```jsx
 const isSmall = useMediaQuery('(min-width:600px)');
@@ -254,7 +254,7 @@ Here is an example for a responsive list of posts, displaying a `SimpleList` on 
 
 ```jsx
 // in src/posts.js
-import * as React from "react";
+import * as React from 'react';
 import { useMediaQuery } from '@material-ui/core';
 import { List, SimpleList, Datagrid, TextField, ReferenceField, EditButton } from 'react-admin';
 
@@ -310,15 +310,18 @@ const App = () => (
 
 ## Writing a Custom Theme
 
-If you need more fine-tuning, you'll need to write your own `theme` object, following [Material UI themes documentation](https://material-ui.com/customization/themes/). Material UI merges custom theme objects with the default theme.
+If you need more fine-tuning, you'll need to write your own `theme` object, following [Material UI themes documentation](https://material-ui.com/customization/themes/).
+
+For instance, here is how to override the default react-admin theme:
 
 ```jsx
-import { createMuiTheme } from '@material-ui/core/styles';
+import { defaultTheme } from 'react-admin';
+import merge from 'lodash/merge';
 import indigo from '@material-ui/core/colors/indigo';
 import pink from '@material-ui/core/colors/pink';
 import red from '@material-ui/core/colors/red';
 
-const myTheme = createMuiTheme({
+const myTheme = merge({}, defaultTheme, {
     palette: {
         primary: indigo,
         secondary: pink,
@@ -328,13 +331,7 @@ const myTheme = createMuiTheme({
     },
     typography: {
         // Use the system font instead of the default Roboto font.
-        fontFamily: [
-            '-apple-system',
-            'BlinkMacSystemFont',
-            '"Segoe UI"',
-            'Arial',
-            'sans-serif',
-        ].join(','),
+        fontFamily: ['-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Arial', 'sans-serif'].join(','),
     },
     overrides: {
         MuiButton: { // override the styles of all instances of this component
@@ -346,7 +343,7 @@ const myTheme = createMuiTheme({
 });
 ```
 
-The `myTheme` object contains the following keys:
+A `theme` object can contain the following keys:
 
 * `breakpoints`
 * `direction`
@@ -355,9 +352,9 @@ The `myTheme` object contains the following keys:
 * `palette`
 * `props`
 * `shadows`
-* `typography`
-* `transitions`
 * `spacing`
+* `transitions`
+* `typography`
 * `zIndex`
 
 **Tip**: Check [Material UI default theme documentation](https://material-ui.com/customization/default-theme/) to see the default values and meaning for these keys.
@@ -387,7 +384,7 @@ const App = () => (
 );
 ```
 
-Your custom layout can extend the default `<Layout>` component if you only want to override the sidebar, the appBar, the menu, the notification component, or the error page. For instance:
+Your custom layout can extend the default `<Layout>` component if you only want to override the sidebar, the appBar, the menu, the notification component or the error page. For instance:
 
 ```jsx
 // in src/MyLayout.js
@@ -410,10 +407,10 @@ export default MyLayout;
 
 ### UserMenu Customization
 
-You can replace the default user menu by your own by setting the `userMenu` prop of the `<AppBar>` component. For instance, to add custom menu items, just decorate the default `<UserMenu>` by adding children to it:
+You can replace the default user menu by your own by setting the `userMenu` prop of the `<AppBar>` component. For instance, to add custom menu items, just decorate the default [`<UserMenu>`](./Buttons.md#usermenu) by adding children to it:
 
 ```jsx
-import * as React from "react";
+import * as React from 'react';
 import { AppBar, UserMenu, MenuItemLink } from 'react-admin';
 import SettingsIcon from '@material-ui/icons/Settings';
 
@@ -435,7 +432,18 @@ const MyUserMenu = props => (
 
 const MyAppBar = props => <AppBar {...props} userMenu={<MyUserMenu />} />;
 
-const MyLayout = props => <Layout {...props} appBar={<MyAppBar />} />;
+const MyLayout = props => <Layout {...props} appBar={MyAppBar} />;
+```
+
+You can also remove the `<UserMenu>` from the `<AppBar>` by passing `false` to the `userMenu` prop:
+
+```jsx
+import * as React from 'react';
+import { AppBar } from 'react-admin';
+
+const MyAppBar = props => <AppBar {...props} userMenu={false} />;
+
+const MyLayout = props => <Layout {...props} appBar={MyAppBar} />;
 ```
 
 You can also customize the default icon by setting the `icon` prop to the `<UserMenu />` component.
@@ -474,9 +482,11 @@ const MyAppBar = props => <AppBar {...props} userMenu={<MyUserMenu />} />;
 You can specify the `Sidebar` width by setting the `width` and `closedWidth` property on your custom material-ui theme:
 
 ```jsx
+import { defaultTheme } from "react-admin";
 import { createMuiTheme } from '@material-ui/core/styles';
 
 const theme = createMuiTheme({
+    ...defaultTheme,
     sidebar: {
         width: 300, // The default value is 240
         closedWidth: 70, // The default value is 55
@@ -514,7 +524,7 @@ const MyLayout = props => <Layout {...props} sidebar={MySidebar} />
 
 ### Layout From Scratch
 
-For more custom layouts, write a component from scratch. It must contain a `{children}` placeholder, where react-admin will render the resources. Use the [default layout](https://github.com/marmelab/react-admin/blob/master/packages/ra-ui-materialui/src/layout/Layout.js) as a starting point. Here is a simplified version (with no responsive support):
+For more custom layouts, write a component from scratch. It must contain a `{children}` placeholder, where react-admin will render the resources. Use the [default layout](https://github.com/marmelab/react-admin/blob/master/packages/ra-ui-materialui/src/layout/Layout.tsx) as a starting point. Here is a simplified version (with no responsive support):
 
 ```jsx
 // in src/MyLayout.js
@@ -561,7 +571,7 @@ const useStyles = makeStyles(theme => ({
     },
 }));
 
-const MyLayout = ({ 
+const MyLayout = ({
     children,
     dashboard,
     logout,
@@ -570,11 +580,11 @@ const MyLayout = ({
     const classes = useStyles();
     const dispatch = useDispatch();
     const open = useSelector(state => state.admin.ui.sidebarOpen);
-    
+
     useEffect(() => {
         dispatch(setSidebarVisibility(true));
     }, [setSidebarVisibility]);
-    
+
     return (
         <div className={classes.root}>
             <div className={classes.appFrame}>
@@ -606,17 +616,61 @@ MyLayout.propTypes = {
 export default MyLayout;
 ```
 
-**Tip**: Don't forget to render a `<Notification>` component in your custom layout, otherwise the undoable updates will never be sent to the server. That's because part of the "undo" logic of react-admin lies in the `<Notification>` component.  
+**Tip**: Don't forget to render a `<Notification>` component in your custom layout, otherwise the undoable updates will never be sent to the server. That's because part of the "undo" logic of react-admin lies in the `<Notification>` component.
+
+## Adding a Breadcrumb
+
+The `<Breadcrumb>` component is part of `ra-navigation`, an [Enterprise Edition](https://marmelab.com/ra-enterprise)<img class="icon" src="./img/premium.svg" /> module. It displays a breadcrumb based on a site structure that you can override at will.
+
+```jsx
+import * as React from 'react';
+import {
+    AppLocationContext,
+    Breadcrumb,
+    ResourceBreadcrumbItems,
+} from '@react-admin/ra-navigation';
+import { Admin, Resource, Layout } from 'react-admin';
+
+import PostList from './PostList';
+import PostEdit from './PostEdit';
+import PostShow from './PostShow';
+import PostCreate from './PostCreate';
+
+const MyLayout = ({ children, ...props }) => (
+    <AppLocationContext>
+        <Layout {...props}>
+            <Breadcrumb {...props}>
+                <ResourceBreadcrumbItems />
+            </Breadcrumb>
+            {children}
+        </Layout>
+    </AppLocationContext>
+);
+
+const App = () => (
+    <Admin dataProvider={dataProvider} layout={MyLayout}>
+        <Resource
+            name="posts"
+            list={PostList}
+            edit={PostEdit}
+            show={PostShow}
+            create={PostCreate}
+        />
+    </Admin>
+);
+```
+
+Check [the `ra-navigation` documentation](https://marmelab.com/ra-enterprise/modules/ra-navigation) for more details.
 
 ## Customizing the AppBar Content
 
-By default, the react-admin `<AppBar>` component displays the page title. You can override this default by passing children to `<AppBar>` - they will replace the default title. And if you still want to include the page title, make sure you include an element with id `react-admin-title` in the top bar (this uses [React Portals](https://reactjs.org/docs/portals.html)). 
+By default, the react-admin `<AppBar>` component displays the page title. You can override this default by passing children to `<AppBar>` - they will replace the default title. And if you still want to include the page title, make sure you include an element with id `react-admin-title` in the top bar (this uses [React Portals](https://reactjs.org/docs/portals.html)).
 
 Here is an example customization for `<AppBar>` to include a company logo in the center of the page header:
 
 ```jsx
 // in src/MyAppBar.js
-import * as React from "react";
+import * as React from 'react';
 import { AppBar } from 'react-admin';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles } from '@material-ui/core/styles';
@@ -658,7 +712,7 @@ To use this custom `MyAppBar` component, pass it as prop to a custom `Layout`, a
 
 ```jsx
 // in src/MyLayout.js
-import * as React from "react";
+import * as React from 'react';
 import { Layout } from 'react-admin';
 import MyAppBar from './MyAppBar';
 
@@ -682,18 +736,17 @@ const App = () => (
 
 ![custom AppBar](./img/custom_appbar.png)
 
-
 **Tip**: You can change the color of the `<AppBar>` by setting the `color` prop to `default`, `inherit`, `primary`, `secondary` or `transparent`. The default value is `secondary`.
 
 ## Replacing The AppBar
 
-For more drastic changes of the top component, you will probably want to create an `<AppBar>` from scratch instead of just passing children to react-admin's `<AppBar>`. 
+For more drastic changes of the top component, you will probably want to create an `<AppBar>` from scratch instead of just passing children to react-admin's `<AppBar>`.
 
 By default, React-admin uses [Material-ui's `<AppBar>` component](https://material-ui.com/api/app-bar/) together with [react-headroom](https://github.com/KyleAMathews/react-headroom) to hide the `AppBar` on scroll. Here is an example top bar rebuilt from scratch to remove the "headroom" effect:
 
 ```jsx
 // in src/MyAppBar.js
-import * as React from "react";
+import * as React from 'react';
 import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
@@ -711,6 +764,34 @@ export default MyAppBar;
 
 Take note that this uses *material-ui's `<AppBar>`* instead of *react-admin's `<AppBar>`*. To use this custom `AppBar` component, pass it as prop to a custom `Layout`, as explained in the previous section.
 
+## Adding Dark Mode Support
+
+The `<ToggleThemeButton>` component is part of `ra-preferences`, an [Enterprise Edition](https://marmelab.com/ra-enterprise)<img class="icon" src="./img/premium.svg" /> module. It lets users switch from light to dark mode, and persists that choice in local storage so that users only have to do it once.
+
+![Dark Mode support](https://marmelab.com/ra-enterprise/modules/assets/ra-preferences-overview.gif)
+
+You can add the `<ToggleThemeButton>` to a custom App Bar:
+
+```jsx
+import * as React from 'react';
+import { Layout, AppBar } from 'react-admin';
+import { Box, Typography } from '@material-ui/core';
+import { ToggleThemeButton } from '@react-admin/ra-preferences';
+
+const MyAppBar = props => (
+    <AppBar {...props}>
+        <Box flex="1">
+            <Typography variant="h6" id="react-admin-title"></Typography>
+        </Box>
+        <ToggleThemeButton />
+    </AppBar>
+);
+
+const MyLayout = props => <Layout {...props} appBar={MyAppBar} />;
+```
+
+Check [the `ra-preferences` documentation](https://marmelab.com/ra-enterprise/modules/ra-preferences#togglethemebutton-store-the-theme-in-the-preferences) for more details.
+
 ## Using a Custom Menu
 
 By default, React-admin uses the list of `<Resource>` components passed as children of `<Admin>` to build a menu to each resource with a `list` component.
@@ -723,7 +804,7 @@ import * as React from 'react';
 import { createElement } from 'react';
 import { useSelector } from 'react-redux';
 import { useMediaQuery } from '@material-ui/core';
-import { MenuItemLink, getResources } from 'react-admin';
+import { DashboardMenuItem, MenuItemLink, getResources } from 'react-admin';
 import DefaultIcon from '@material-ui/icons/ViewList';
 import LabelIcon from '@material-ui/icons/Label';
 
@@ -733,6 +814,7 @@ const Menu = ({ onMenuClick, logout }) => {
     const resources = useSelector(getResources);
     return (
         <div>
+            <DashboardMenuItem onClick={onMenuClick} sidebarIsOpen={open} />
             {resources.map(resource => (
                 <MenuItemLink
                     key={resource.name}
@@ -806,50 +888,13 @@ const App = () => (
 
 **Tip**: If you use authentication, don't forget to render the `logout` prop in your custom menu component. Also, the `onMenuClick` function passed as prop is used to close the sidebar on mobile.
 
-The `MenuItemLink` component make use of the React Router [`NavLink`](https://reacttraining.com/react-router/web/api/NavLink) component, hence allowing to customize its style when it targets the current page.
+The `MenuItemLink` component make use of the React Router [NavLink](https://reacttraining.com/react-router/web/api/NavLink) component, hence allowing to customize its style when it targets the current page.
 
-If the default active style does not suit your tastes, you can override it by passing your own `classes`:
+**Tip**: If you need a multi-level menu, or a Mega Menu opening panels with custom content, check out [the `ra-navigation`<img class="icon" src="./img/premium.svg" /> module](https://marmelab.com/ra-enterprise/modules/ra-navigation) (part of the [Enterprise Edition](https://marmelab.com/ra-enterprise))
 
-```jsx
-// in src/Menu.js
-import * as React from 'react';
-import { createElement } from 'react';
-import { useSelector } from 'react-redux';
-import { useMediaQuery } from '@material-ui/core';
-import { MenuItemLink, getResources } from 'react-admin';
-import { withRouter } from 'react-router-dom';
-import LabelIcon from '@material-ui/icons/Label';
+![multi-level menu](https://marmelab.com/ra-enterprise/modules/assets/ra-multilevelmenu-item.gif)
 
-const Menu = ({ onMenuClick, logout }) => {
-    const isXSmall = useMediaQuery(theme => theme.breakpoints.down('xs'));
-    const open = useSelector(state => state.admin.ui.sidebarOpen);
-    const resources = useSelector(getResources);
-    return (
-        <div>
-            {resources.map(resource => (
-                <MenuItemLink
-                    key={resource.name}
-                    to={`/${resource.name}`}
-                    primaryText={resource.options && resource.options.label || resource.name}
-                    leftIcon={createElement(resource.icon)}
-                    onClick={onMenuClick}
-                    sidebarIsOpen={open}
-                />
-            ))}
-            <MenuItemLink
-                to="/custom-route"
-                primaryText="Miscellaneous"
-                leftIcon={LabelIcon}
-                onClick={onMenuClick}
-                sidebarIsOpen={open}
-            />
-            {isXSmall && logout}
-        </div>
-    );
-};
-
-export default withRouter(Menu);
-```
+![MegaMenu and Breadcrumb](https://marmelab.com/ra-enterprise/modules/assets/ra-multilevelmenu-categories.gif)
 
 ## Using a Custom Login Page
 
@@ -939,7 +984,7 @@ Whenever a client-side error happens in react-admin, the user sees a default err
 
 ```jsx
 // in src/MyError.js
-import * as React from "react";
+import * as React from 'react';
 import Button from '@material-ui/core/Button';
 import ErrorIcon from '@material-ui/icons/Report';
 import History from '@material-ui/icons/History';
@@ -965,7 +1010,7 @@ const MyError = ({
             <div>
                 <Button
                     variant="contained"
-                    icon={<History />}
+                    startIcon={<History />}
                     onClick={() => history.go(-1)}
                 >
                     Back
@@ -1009,10 +1054,10 @@ Display a circular progress component with optional messages. Display the same l
 
 Supported props:
 
-| Prop               | Type     | Default              | Descriptions                               |
-| ------------------ | -------- | -------------------- | ------------------------------------------ |
-| `loadingPrimary`   | `String` | `ra.page.loading`    | Label to use for primary loading message   |
-| `loadingSecondary` | `String` | `ra.message.loading` | Label to use for secondary loading message |
+| Prop               | Required | Type      | Default              | Descriptions                               |
+| ------------------ | -------- | --------- | -------------------- | ------------------------------------------ |
+| `loadingPrimary`   | Optional | `string`  | `ra.page.loading`    | Label to use for primary loading message   |
+| `loadingSecondary` | Optional | `string`  | `ra.message.loading` | Label to use for secondary loading message |
 
 Usage:
 

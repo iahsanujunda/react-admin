@@ -6,27 +6,31 @@ import {
 } from 'react-final-form';
 import { Validator, composeValidators } from './validate';
 import isRequired from './isRequired';
-import { useCallback, ChangeEvent } from 'react';
+import { useCallback, ChangeEvent, FocusEvent, useEffect } from 'react';
+import { useFormGroupContext } from './useFormGroupContext';
+import { useFormContext } from './useFormContext';
 
 export interface InputProps<T = any>
     extends Omit<
         FieldProps<any, FieldRenderProps<any, HTMLElement>, HTMLElement>,
         'validate' | 'children'
     > {
-    source: string;
-    name?: string;
-    id?: string;
     defaultValue?: any;
-    validate?: Validator | Validator[];
-    onBlur?: (event: FocusEvent) => void;
-    onChange?: (event: ChangeEvent | any) => void;
-    onFocus?: (event: FocusEvent) => void;
-    options?: T;
+    id?: string;
     input?: FieldInputProps<any, HTMLElement>;
     meta?: any;
+    name?: string;
+    onBlur?: (event: FocusEvent<T>) => void;
+    onChange?: (event: ChangeEvent | any) => void;
+    onFocus?: (event: FocusEvent<T>) => void;
+    options?: T;
+    resource?: string;
+    source: string;
+    validate?: Validator | Validator[];
+    isRequired?: boolean;
 }
 
-interface ComputedInputProps extends FieldRenderProps<any, HTMLElement> {
+export interface UseInputValue extends FieldRenderProps<any, HTMLElement> {
     id: string;
     isRequired: boolean;
 }
@@ -40,9 +44,23 @@ const useInput = ({
     onBlur: customOnBlur,
     onChange: customOnChange,
     onFocus: customOnFocus,
+    isRequired: isRequiredOption,
     ...options
-}: InputProps): ComputedInputProps => {
+}: InputProps): UseInputValue => {
     const finalName = name || source;
+    const formGroupName = useFormGroupContext();
+    const formContext = useFormContext();
+
+    useEffect(() => {
+        if (!formContext || !formGroupName) {
+            return;
+        }
+        formContext.registerField(source, formGroupName);
+
+        return () => {
+            formContext.unregisterField(source, formGroupName);
+        };
+    }, [formContext, formGroupName, source]);
 
     const sanitizedValidate = Array.isArray(validate)
         ? composeValidators(validate)
@@ -96,7 +114,7 @@ const useInput = ({
             id: id || source,
             input: options.input,
             meta: options.meta,
-            isRequired: isRequired(validate),
+            isRequired: isRequiredOption || isRequired(validate),
         };
     }
 
@@ -109,7 +127,7 @@ const useInput = ({
             onFocus: handleFocus,
         },
         meta,
-        isRequired: isRequired(validate),
+        isRequired: isRequiredOption || isRequired(validate),
     };
 };
 

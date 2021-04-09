@@ -1,11 +1,11 @@
 import * as React from 'react';
 import expect from 'expect';
-import { render, cleanup } from '@testing-library/react';
+import { render } from '@testing-library/react';
+import { RecordContextProvider } from 'ra-core';
+
 import NumberField from './NumberField';
 
 describe('<NumberField />', () => {
-    afterEach(cleanup);
-
     it('should return null when the record is not set', () => {
         const { container } = render(<NumberField source="foo" />);
         expect(container.firstChild).toBeNull();
@@ -35,6 +35,15 @@ describe('<NumberField />', () => {
     it('should render a number', () => {
         const { queryByText } = render(
             <NumberField record={{ id: 123, foo: 1 }} source="foo" />
+        );
+        expect(queryByText('1')).not.toBeNull();
+    });
+
+    it('should use record from RecordContext', () => {
+        const { queryByText } = render(
+            <RecordContextProvider value={{ id: 123, foo: 1 }}>
+                <NumberField source="foo" />
+            </RecordContextProvider>
         );
         expect(queryByText('1')).not.toBeNull();
     });

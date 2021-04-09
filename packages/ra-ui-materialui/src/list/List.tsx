@@ -1,10 +1,10 @@
 import * as React from 'react';
-import { FC } from 'react';
+import { ReactElement } from 'react';
 import PropTypes from 'prop-types';
 import {
     useCheckMinimumRequiredProps,
     useListController,
-    ListContext,
+    ListContextProvider,
 } from 'ra-core';
 
 import { TitlePropType } from '../layout/Title';
@@ -26,13 +26,18 @@ import { ListProps } from '../types';
  *
  * - actions
  * - aside
+ * - bulkActionButtons
  * - component
+ * - empty
+ * - exporter
  * - filter (the permanent filter to apply to the query)
+ * - filterDefaultValues (the default values for `alwaysOn` filters)
  * - filters (a React component used to display the filter form)
  * - pagination
  * - perPage
  * - sort
  * - title
+ * - syncWithLocation
  *
  * @example
  *
@@ -57,13 +62,13 @@ import { ListProps } from '../types';
  *     </List>
  * );
  */
-const List: FC<ListProps> = props => {
+const List = (props: ListProps & { children: ReactElement }): ReactElement => {
     useCheckMinimumRequiredProps('List', ['children'], props);
     const controllerProps = useListController(props);
     return (
-        <ListContext.Provider value={controllerProps}>
+        <ListContextProvider value={controllerProps}>
             <ListView {...props} {...controllerProps} />
-        </ListContext.Provider>
+        </ListContextProvider>
     );
 };
 
@@ -74,7 +79,7 @@ List.propTypes = {
     aside: PropTypes.element,
     // @ts-ignore-line
     bulkActionButtons: PropTypes.oneOfType([PropTypes.element, PropTypes.bool]),
-    children: PropTypes.node,
+    children: PropTypes.element,
     classes: PropTypes.object,
     className: PropTypes.string,
     filter: PropTypes.object,
@@ -91,14 +96,15 @@ List.propTypes = {
     title: TitlePropType,
     // the props managed by react-admin
     authProvider: PropTypes.func,
-    hasCreate: PropTypes.bool.isRequired,
-    hasEdit: PropTypes.bool.isRequired,
-    hasList: PropTypes.bool.isRequired,
-    hasShow: PropTypes.bool.isRequired,
+    hasCreate: PropTypes.bool,
+    hasEdit: PropTypes.bool,
+    hasList: PropTypes.bool,
+    hasShow: PropTypes.bool,
     location: PropTypes.any,
     match: PropTypes.any,
     path: PropTypes.string,
-    resource: PropTypes.string.isRequired,
+    resource: PropTypes.string,
+    syncWithLocation: PropTypes.bool,
 };
 
 List.defaultProps = {

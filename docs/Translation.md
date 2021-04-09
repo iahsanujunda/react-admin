@@ -37,7 +37,7 @@ const App = () => (
         authProvider={authProvider}
         i18nProvider={i18nProvider}
     >
-        <Resource name="posts" list={...}>
+        <Resource name="posts" list={/* ... */}>
         // ...
 ```
 
@@ -100,7 +100,7 @@ const i18nProvider = {
 };
 ```
 
-But this is too naive: react-admin expects that i18nProviders support string interpolation for translation, and asynchronous message loading for locale change. That's why react-admin bundles an `i18nProvider` *factory* called `polyglotI18nProvider`. This factory relies on [polyglot.js](http://airbnb.io/polyglot.js/), which uses JSON files for translations. It only expects one argument: a function returning a list of messages based on a locale passed as argument. 
+But this is too naive: react-admin expects that i18nProviders support string interpolation for translation, and asynchronous message loading for locale change. That's why react-admin bundles an `i18nProvider` *factory* called `polyglotI18nProvider`. This factory relies on [polyglot.js](https://airbnb.io/polyglot.js/), which uses JSON files for translations. It only expects one argument: a function returning a list of messages based on a locale passed as argument. 
 
 So the previous provider can be written as:
 
@@ -166,7 +166,7 @@ You can find translation packages for the following languages:
 - Belarusian (`be`): [tui-ru/ra-language-belarusian](https://github.com/tui-ru/ra-language-belarusian)
 - Brazilian Portuguese (`pt-br`): [gucarletto/ra-language-pt-br](https://github.com/gucarletto/ra-language-pt-br)
 - Bulgarian (`bg`): [ptodorov0/ra-language-bulgarian](https://github.com/ptodorov0/ra-language-bulgarian)
-- Catalan (`ca`): [sergioedo/ra-language-catalan](https://github.com/sergioedo/ra-language-catalan)
+- Catalan (`ca`): [joshf/ra-language-catalan](https://github.com/joshf/ra-language-catalan)
 - Chinese (`zh-TW`): [areyliu6/ra-language-chinese-traditional](https://github.com/areyliu6/ra-language-chinese-traditional)
 - Chinese (`zh`): [chen4w/ra-language-chinese](https://github.com/chen4w/ra-language-chinese)
 - Czech (`cs`): [binao/ra-language-czech](https://github.com/binao/ra-language-czech)
@@ -179,13 +179,15 @@ You can find translation packages for the following languages:
 - French (`fr`): [marmelab/ra-language-french](https://github.com/marmelab/react-admin/tree/master/packages/ra-language-french)
 - German (`de`): [greenbananaCH/ra-language-german](https://github.com/greenbananaCH/ra-language-german) (tree translation: [straurob/ra-tree-language-german](https://github.com/straurob/ra-tree-language-german))
 - Hebrew (`he`): [ak-il/ra-language-hebrew](https://github.com/ak-il/ra-language-hebrew)
+- Hindi (`hi`): [harshit-budhraja/ra-language-hindi](https://github.com/harshit-budhraja/ra-language-hindi)
 - Hungarian (`hu`): [phelion/ra-language-hungarian](https://github.com/phelion/ra-language-hungarian)
-- Indonesian (`id`): [ronadi/ra-language-indonesian](https://github.com/ronadi/ra-language-indonesian)
+- Indonesian (`id`): [danangekal/ra-language-indonesian-new](https://github.com/danangekal/ra-language-indonesian-new)
 - Italian (`it`): [stefsava/ra-italian](https://github.com/stefsava/ra-italian)
 - Japanese (`ja`): [bicstone/ra-language-japanese](https://github.com/bicstone/ra-language-japanese)
 - Korean (`ko`): [acidsound/ra-language-korean](https://github.com/acidsound/ra-language-korean)
 - Latvian (`lv`): [tui-ru/ra-language-latvian](https://github.com/tui-ru/ra-language-latvian)
 - Lithuanian (`lt`): [tui-ru/ra-language-lithuanian](https://github.com/tui-ru/ra-language-lithuanian)
+- Malay (`ms`): [kayuapi/ra-language-malay](https://github.com/kayuapi/ra-language-malay.git)
 - Norwegian (`no`): [jon-harald/ra-language-norwegian](https://github.com/jon-harald/ra-language-norwegian)
 - Polish (`pl`): [tskorupka/ra-language-polish](https://github.com/tskorupka/ra-language-polish)
 - Portuguese (`pt`): [henriko202/ra-language-portuguese](https://github.com/henriko202/ra-language-portuguese)
@@ -352,6 +354,54 @@ export default App;
 
 Beware that users from all around the world may use your application, so make sure the `i18nProvider` returns default messages even for unknown locales?
 
+## Restoring The Locale Choice
+
+The `<LanguageSwitcher>` component is part of `ra-preferences`, an [Enterprise Edition](https://marmelab.com/ra-enterprise)<img class="icon" src="./img/premium.svg" /> module. It displays a button in the App Bar letting users choose their preferred language, and **persists that choice in localStorage**. Users only have to set their preferred locale once per browser.
+
+```jsx
+import * as React from 'react';
+import { LanguageSwitcher } from '@react-admin/ra-preferences';
+import polyglotI18nProvider from 'ra-i18n-polyglot';
+import englishMessages from 'ra-language-english';
+import frenchMessages from 'ra-language-french';
+import { Admin, Resource, List, SimpleList, Layout, AppBar } from 'react-admin';
+import { Box, Typography } from '@material-ui/core';
+
+const MyAppBar = props => (
+    <AppBar {...props}>
+        <Box flex="1">
+            <Typography variant="h6" id="react-admin-title"></Typography>
+        </Box>
+        <LanguageSwitcher
+            languages={[
+                { locale: 'en', name: 'English' },
+                { locale: 'fr', name: 'Français' },
+            ]}
+            defaultLanguage="English"
+        />
+    </AppBar>
+);
+
+const MyLayout = props => <Layout {...props} appBar={MyAppBar} />;
+
+const i18nProvider = polyglotI18nProvider(
+    locale => (locale === 'fr' ? frenchMessages : englishMessages),
+    'en' // Default locale
+);
+
+const App = () => (
+    <Admin
+        i18nProvider={i18nProvider}
+        dataProvider={dataProvider}
+        layout={MyLayout}
+    >
+        <Resource name="posts" list={PostList} />
+    </Admin>
+);
+```
+
+Check [the `ra-preferences` documentation](https://marmelab.com/ra-enterprise/modules/ra-preferences) for more details.
+
 ## Translation Messages
 
 The `message` returned by the `polyglotI18nProvider` function argument should be a dictionary where the keys identify interface components, and values are the translated string. This dictionary is a simple JavaScript object looking like the following:
@@ -412,7 +462,7 @@ This lets you translate your own resource and field names by passing a `messages
 }
 ```
 
-As you can see, [polyglot pluralization](http://airbnb.io/polyglot.js/#pluralization) is used here, but it is optional.
+As you can see, [polyglot pluralization](https://airbnb.io/polyglot.js/#pluralization) is used here, but it is optional.
 
 Using `resources` keys is an alternative to using the `label` prop in Field and Input components, with the advantage of supporting translation.
 
@@ -526,7 +576,7 @@ translate('not_yet_translated', { _: 'Default translation' });
 => 'Default translation'
 ```
 
-To find more detailed examples, please refer to [http://airbnb.io/polyglot.js/](http://airbnb.io/polyglot.js/)
+To find more detailed examples, please refer to [https://airbnb.io/polyglot.js/](https://airbnb.io/polyglot.js/)
 
 ## Translating Validation Errors
 
@@ -602,11 +652,11 @@ If you want to override these messages in a specific resource you can add the fo
 
 ## Specific case in Confirm messages and Empty Page
 
-In confirm messages and in the empty page, the resource name appears in the middle of sentences, and react-admin automatically sets the resource name translation to lower case.  
+In confirm messages and in the empty page, the resource name appears in the middle of sentences, and react-admin automatically sets the resource name translation to lower case.
 
 > Are you sure you want to delete this comment?
 
-This works in English, but you may want to display resources in another way to match with language rules, like in German, where names are always capitalized.  
+This works in English, but you may want to display resources in another way to match with language rules, like in German, where names are always capitalized.
 ie: `Sind Sie sicher, dass Sie diesen Kommentar löschen möchten?`
 
 To do this, simply add a `forcedCaseName` key next to the `name` key in your translation file.
@@ -619,8 +669,9 @@ resources: {
         fields: {
             id: 'Id',
             name: 'Bezeichnung',
-        },
-    },
+        }
+    }
+}
 ```
 
 ## Silencing Translation Warnings
@@ -648,3 +699,27 @@ const i18nProvider = polyglotI18nProvider(locale =>
 **Tip**: Check [the Polyglot documentation](https://airbnb.io/polyglot.js/#options-overview) for a list of options you can pass to Polyglot at startup. 
 
 This solution is all-or-nothing: you can't silence only *some* missing translation warnings. An alternative solution consists of passing a default translation using the `_` translation option, as explained in the [Using Specific Polyglot Features section](#using-specific-polyglot-features) above. 
+
+## Translating Record Fields
+
+Some of your records may contain fields that are translated in multiple languages. It's common, in such cases, to offer an interface allowing admin users to see and edit each translation. React-admin provides 2 components for that:
+
+- To display translatable fields, use the [`<TranslatableFields>`](./Fields.md#translatable-fields) component
+- To edit translatable fields, use the [`<TranslatableInputs>`](./Inputs.md#translatable-inputs) component
+
+They both expect the translatable values to have the following structure:
+
+```js
+{
+    name: {
+        en: 'The english value',
+        fr: 'The french value',
+        tlh: 'The klingon value',
+    },
+    description: {
+        en: 'The english value',
+        fr: 'The french value',
+        tlh: 'The klingon value',
+    }
+}
+```

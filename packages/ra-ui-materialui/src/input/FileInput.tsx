@@ -15,7 +15,7 @@ import { useInput, useTranslate, InputProps } from 'ra-core';
 
 import Labeled from './Labeled';
 import FileInputPreview from './FileInputPreview';
-import sanitizeRestProps from './sanitizeRestProps';
+import sanitizeInputRestProps from './sanitizeInputRestProps';
 import InputHelperText from './InputHelperText';
 
 const useStyles = makeStyles(
@@ -128,7 +128,7 @@ const FileInput: FunctionComponent<
         validate,
         ...rest,
     });
-    const { touched, error } = meta;
+    const { touched, error, submitError } = meta;
     const files = value ? (Array.isArray(value) ? value : [value]) : [];
 
     const onDrop = (newFiles, rejectedFiles, event) => {
@@ -183,7 +183,7 @@ const FileInput: FunctionComponent<
             resource={resource}
             isRequired={isRequired}
             meta={meta}
-            {...sanitizeRestProps(rest)}
+            {...sanitizeInputRestProps(rest)}
         >
             <>
                 <div
@@ -209,7 +209,7 @@ const FileInput: FunctionComponent<
                 <FormHelperText>
                     <InputHelperText
                         touched={touched}
-                        error={error}
+                        error={error || submitError}
                         helperText={helperText}
                     />
                 </FormHelperText>

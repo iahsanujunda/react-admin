@@ -78,6 +78,7 @@ describe('List Page', () => {
         it('should keep filters when navigating away and going back on given page', () => {
             ListPagePosts.logout();
             LoginPage.login('admin', 'password');
+            ListPagePosts.navigate();
             ListPagePosts.setFilterValue('q', 'quis culpa impedit');
             cy.contains('1-1 of 1');
 
@@ -99,6 +100,7 @@ describe('List Page', () => {
         it('should keep added filters when emptying it after navigating away and back', () => {
             ListPagePosts.logout();
             LoginPage.login('admin', 'password');
+            ListPagePosts.navigate();
             ListPagePosts.showFilter('title');
             ListPagePosts.setFilterValue(
                 'title',
@@ -187,6 +189,25 @@ describe('List Page', () => {
             ListPagePosts.applyDeleteBulkAction();
             cy.contains('1-10 of 10');
         });
+
+        it('should allow to select items with the shift key on different pages', () => {
+            cy.contains('1-10 of 13'); // wait for data
+            cy.get(ListPagePosts.elements.selectItem).eq(0).click();
+            cy.get(ListPagePosts.elements.selectItem)
+                .eq(2)
+                .click({ shiftKey: true });
+            cy.contains('3 items selected');
+            ListPagePosts.nextPage();
+            cy.contains('11-13 of 13'); // wait for data
+            cy.get(ListPagePosts.elements.selectedItem).should(els => {
+                expect(els).to.have.length(0);
+            });
+            cy.get(ListPagePosts.elements.selectItem).eq(0).click();
+            cy.get(ListPagePosts.elements.selectItem)
+                .eq(2)
+                .click({ shiftKey: true });
+            cy.contains('6 items selected');
+        });
     });
 
     describe('rowClick', () => {
@@ -203,9 +224,7 @@ describe('List Page', () => {
             ListPagePosts.logout();
             LoginPage.login('user', 'password');
             ListPageUsers.navigate();
-            cy.contains('Annamarie Mayer')
-                .parents('tr')
-                .click();
+            cy.contains('Annamarie Mayer').parents('tr').click();
             cy.contains('Summary').should(el => expect(el).to.exist);
         });
     });

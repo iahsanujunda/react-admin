@@ -3,8 +3,13 @@ import { FC, useState } from 'react';
 import { useSelector } from 'react-redux';
 import SettingsIcon from '@material-ui/icons/Settings';
 import LabelIcon from '@material-ui/icons/Label';
-import { useMediaQuery, Theme } from '@material-ui/core';
-import { useTranslate, DashboardMenuItem, MenuItemLink } from 'react-admin';
+import { useMediaQuery, Theme, Box } from '@material-ui/core';
+import {
+    useTranslate,
+    DashboardMenuItem,
+    MenuItemLink,
+    MenuProps,
+} from 'react-admin';
 
 import visitors from '../visitors';
 import orders from '../orders';
@@ -17,17 +22,11 @@ import { AppState } from '../types';
 
 type MenuName = 'menuCatalog' | 'menuSales' | 'menuCustomers';
 
-interface Props {
-    dense: boolean;
-    logout: () => void;
-    onMenuClick: () => void;
-}
-
-const Menu: FC<Props> = ({ onMenuClick, dense, logout }) => {
+const Menu: FC<MenuProps> = ({ onMenuClick, logout, dense = false }) => {
     const [state, setState] = useState({
-        menuCatalog: false,
-        menuSales: false,
-        menuCustomers: false,
+        menuCatalog: true,
+        menuSales: true,
+        menuCustomers: true,
     });
     const translate = useTranslate();
     const isXSmall = useMediaQuery((theme: Theme) =>
@@ -41,7 +40,7 @@ const Menu: FC<Props> = ({ onMenuClick, dense, logout }) => {
     };
 
     return (
-        <div>
+        <Box mt={1}>
             {' '}
             <DashboardMenuItem onClick={onMenuClick} sidebarIsOpen={open} />
             <SubMenu
@@ -152,7 +151,7 @@ const Menu: FC<Props> = ({ onMenuClick, dense, logout }) => {
                 />
             )}
             {isXSmall && logout}
-        </div>
+        </Box>
     );
 };
 

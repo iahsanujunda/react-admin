@@ -32,8 +32,33 @@ const cachedRequestsReducer: Reducer<State> = (
     action
 ) => {
     if (action.type === REFRESH_VIEW) {
-        // force refresh
-        return initialState;
+        if (action.payload?.hard) {
+            // force refresh
+            return initialState;
+        } else {
+            // remove validity only
+            const newState = {};
+            Object.keys(previousState).forEach(key => {
+                newState[key] = {
+                    ...previousState[key],
+                    validity: undefined,
+                };
+            });
+            return newState;
+        }
+    }
+    if (action.meta && action.meta.optimistic) {
+        if (
+            action.meta.fetch === CREATE ||
+            action.meta.fetch === DELETE ||
+            action.meta.fetch === DELETE_MANY ||
+            action.meta.fetch === UPDATE ||
+            action.meta.fetch === UPDATE_MANY
+        ) {
+            // force refresh of all lists because we don't know where the
+            // new/deleted/updated record(s) will appear in the list
+            return initialState;
+        }
     }
     if (!action.meta || action.meta.fetchStatus !== FETCH_END) {
         // not a return from the dataProvider

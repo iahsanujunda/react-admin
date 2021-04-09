@@ -1,18 +1,20 @@
 import * as React from 'react';
 import expect from 'expect';
 import CheckboxGroupInput from './CheckboxGroupInput';
-import { render, cleanup, fireEvent } from '@testing-library/react';
+import { render, fireEvent } from '@testing-library/react';
 import { Form } from 'react-final-form';
-import { renderWithRedux, TestTranslationProvider } from 'ra-core';
+import { TestTranslationProvider } from 'ra-core';
+import { renderWithRedux } from 'ra-test';
 
 describe('<CheckboxGroupInput />', () => {
     const defaultProps = {
         source: 'tags',
         resource: 'posts',
-        choices: [{ id: 'ang', name: 'Angular' }, { id: 'rct', name: 'React' }],
+        choices: [
+            { id: 'ang', name: 'Angular' },
+            { id: 'rct', name: 'React' },
+        ],
     };
-
-    afterEach(cleanup);
 
     it('should render choices as checkbox components', () => {
         const { getByLabelText } = render(
@@ -265,5 +267,65 @@ describe('<CheckboxGroupInput />', () => {
             expect(error).toBeDefined();
             expect(error.classList.contains('Mui-error')).toEqual(true);
         });
+    });
+
+    it('should not render a LinearProgress if loading is true and a second has not passed yet', () => {
+        const { queryByRole } = render(
+            <Form
+                validateOnBlur
+                onSubmit={jest.fn()}
+                render={() => (
+                    <CheckboxGroupInput
+                        {...{
+                            ...defaultProps,
+                            loaded: true,
+                            loading: true,
+                        }}
+                    />
+                )}
+            />
+        );
+
+        expect(queryByRole('progressbar')).toBeNull();
+    });
+
+    it('should render a LinearProgress if loading is true and a second has passed', async () => {
+        const { queryByRole } = render(
+            <Form
+                validateOnBlur
+                onSubmit={jest.fn()}
+                render={() => (
+                    <CheckboxGroupInput
+                        {...{
+                            ...defaultProps,
+                            loaded: true,
+                            loading: true,
+                        }}
+                    />
+                )}
+            />
+        );
+
+        await new Promise(resolve => setTimeout(resolve, 1001));
+
+        expect(queryByRole('progressbar')).not.toBeNull();
+    });
+
+    it('should not render a LinearProgress if loading is false', () => {
+        const { queryByRole } = render(
+            <Form
+                validateOnBlur
+                onSubmit={jest.fn()}
+                render={() => (
+                    <CheckboxGroupInput
+                        {...{
+                            ...defaultProps,
+                        }}
+                    />
+                )}
+            />
+        );
+
+        expect(queryByRole('progressbar')).toBeNull();
     });
 });

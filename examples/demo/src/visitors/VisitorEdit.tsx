@@ -3,6 +3,7 @@ import { FC } from 'react';
 import {
     DateInput,
     Edit,
+    EditProps,
     NullableBooleanInput,
     TextInput,
     PasswordInput,
@@ -11,6 +12,7 @@ import {
     FormWithRedirect,
     required,
     email,
+    FieldProps,
 } from 'react-admin';
 import { Box, Card, CardContent, Typography } from '@material-ui/core';
 
@@ -18,9 +20,9 @@ import Aside from './Aside';
 import FullNameField from './FullNameField';
 import SegmentsInput from './SegmentsInput';
 import { validatePasswords } from './VisitorCreate';
-import { Customer, FieldProps } from '../types';
+import { Customer } from '../types';
 
-const VisitorEdit = (props: any) => {
+const VisitorEdit: FC<EditProps> = props => {
     return (
         <Edit
             title={<VisitorTitle />}
@@ -119,22 +121,30 @@ const VisitorForm = (props: any) => {
                                     />
                                     <Box display={{ xs: 'block', sm: 'flex' }}>
                                         <Box
-                                            flex={1}
+                                            flex={2}
                                             mr={{ xs: 0, sm: '0.5em' }}
                                         >
                                             <TextInput
-                                                source="zipcode"
+                                                source="city"
                                                 resource="customers"
                                                 fullWidth
                                                 helperText={false}
                                             />
                                         </Box>
                                         <Box
-                                            flex={2}
-                                            ml={{ xs: 0, sm: '0.5em' }}
+                                            flex={1}
+                                            mr={{ xs: 0, sm: '0.5em' }}
                                         >
                                             <TextInput
-                                                source="city"
+                                                source="stateAbbr"
+                                                resource="customers"
+                                                fullWidth
+                                                helperText={false}
+                                            />
+                                        </Box>
+                                        <Box flex={2}>
+                                            <TextInput
+                                                source="zipcode"
                                                 resource="customers"
                                                 fullWidth
                                                 helperText={false}

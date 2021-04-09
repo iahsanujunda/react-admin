@@ -1,20 +1,27 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const HardSourceWebpackPlugin = require('hard-source-webpack-plugin');
-const IgnoreNotFoundExportPlugin = require('ignore-not-found-export-plugin');
-const BundleAnalyzerPlugin = require('webpack-bundle-analyzer')
-    .BundleAnalyzerPlugin;
-
-const packagesPath = [__dirname, '..', '..', 'packages'];
 
 module.exports = {
+    entry: './src/index.tsx',
+    output: {
+        path: path.resolve(__dirname, 'dist'),
+        filename: 'bundle.js',
+    },
     devtool: 'cheap-module-source-map',
+    resolve: {
+        extensions: ['.ts', '.js', '.tsx', '.json'],
+    },
     module: {
         rules: [
             {
                 test: /\.(t|j)sx?$/,
                 exclude: /node_modules/,
-                use: { loader: 'babel-loader' },
+                use: {
+                    loader: 'ts-loader',
+                    options: {
+                        transpileOnly: true,
+                    },
+                },
             },
             {
                 test: /\.html$/,
@@ -25,83 +32,9 @@ module.exports = {
     },
     plugins: [
         new HtmlWebpackPlugin({
-            template: './src/index.html',
+            template: './index-webpack.html',
         }),
-        new HardSourceWebpackPlugin(),
-        // required because of https://github.com/babel/babel/issues/7640
-        new IgnoreNotFoundExportPlugin([
-            'CallbackSideEffect',
-            'ChoicesProps',
-            'InputProps',
-            'NotificationSideEffect',
-            'OptionText',
-            'OptionTextElement',
-            'RedirectionSideEffect',
-            'RefreshSideEffect',
-            'AdminUIProps',
-            'AdminContextProps',
-            'AdminRouterProps',
-            'ReferenceArrayProps',
-            'ReferenceManyProps',
-            'LinkToType',
-            'FormContext',
-            'UseReferenceProps',
-            'SortProps',
-            'PaginationProps',
-            'CreateControllerProps',
-            'EditControllerProps',
-            'ShowControllerProps',
-            'ListControllerProps',
-        ]),
-    ].concat(
-        process.env.NODE_ENV === 'development'
-            ? [new BundleAnalyzerPlugin()]
-            : []
-    ),
-    resolve:
-        process.env.USE_ALIAS === 'true'
-            ? {
-                  extensions: ['.ts', '.js', '.tsx', '.json'],
-                  alias: {
-                      'ra-core': path.join(...packagesPath, 'ra-core', 'src'),
-                      'ra-language-french': path.join(
-                          ...packagesPath,
-                          'ra-language-french',
-                          'src'
-                      ),
-                      'ra-language-english': path.join(
-                          ...packagesPath,
-                          'ra-language-english',
-                          'src'
-                      ),
-                      'ra-ui-materialui': path.join(
-                          ...packagesPath,
-                          'ra-ui-materialui',
-                          'src'
-                      ),
-                      'react-admin': path.join(
-                          ...packagesPath,
-                          'react-admin',
-                          'src'
-                      ),
-                      'ra-data-fakerest': path.join(
-                          ...packagesPath,
-                          'ra-data-fakerest',
-                          'src'
-                      ),
-                      'ra-i18n-polyglot': path.join(
-                          ...packagesPath,
-                          'ra-i18n-polyglot',
-                          'src'
-                      ),
-                      'ra-input-rich-text': path.join(
-                          ...packagesPath,
-                          'ra-input-rich-text',
-                          'src'
-                      ),
-                  },
-              }
-            : {},
+    ],
     devServer: {
         disableHostCheck: true,
         host: '127.0.0.1',

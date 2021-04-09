@@ -6,6 +6,8 @@ title: "Documentation"
 
 A frontend Framework for building admin applications running in the browser, on top of REST/GraphQL APIs, using ES6, [React](https://facebook.github.io/react/) and [Material Design](https://material.io/). Open sourced and maintained by [marmelab](https://marmelab.com/).
 
+[![react-admin-demo](https://marmelab.com/react-admin/img/react-admin-demo-still.png)](https://vimeo.com/474999017)
+
 ## Installation
 
 React-admin is available from npm. You can install it (and its required dependencies)
@@ -13,6 +15,8 @@ using:
 
 ```sh
 npm install react-admin
+#or
+yarn add react-admin
 ```
 
 ## Usage
@@ -70,7 +74,7 @@ export const PostEdit = (props) => (
         <SimpleForm>
             <TextInput disabled source="id" />
             <TextInput source="title" />
-            <TextInput source="teaser" options={{ multiLine: true }} />
+            <TextInput source="teaser" options={{ multiline: true }} />
             <TextInput multiline source="body" />
             <DateInput label="Publication date" source="published_at" />
             <TextInput source="average_note" />
@@ -83,7 +87,7 @@ export const PostCreate = (props) => (
     <Create title="Create a Post" {...props}>
         <SimpleForm>
             <TextInput source="title" />
-            <TextInput source="teaser" options={{ multiLine: true }} />
+            <TextInput source="teaser" options={{ multiline: true }} />
             <TextInput multiline source="body" />
             <TextInput label="Publication date" source="published_at" />
             <TextInput source="average_note" />
@@ -107,6 +111,31 @@ See the [Data Providers documentation](./DataProviders.md) for details.
 
 React-admin is designed as a library of loosely coupled React components built on top of [material-ui](https://material-ui.com/), in addition to controller functions implemented the Redux way. It is very easy to replace one part of react-admin with your own, e.g. to use a custom Datagrid, GraphQL instead of REST, or bootstrap instead of Material Design.
 
+## Support
+
+You can get professional support from Marmelab via [React-Admin Enterprise Edition](https://marmelab.com/ra-enterprise), or community support via [StackOverflow](https://stackoverflow.com/questions/tagged/react-admin).
+
+## Enterprise Edition
+
+The [React-Admin Enterprise Edition](https://marmelab.com/ra-enterprise) <img class="icon" src="./img/premium.svg" /> offers additional features and services for react-admin:
+
+- Save weeks of development thanks to the **Private Modules**, valid on an unlimited number of domains and projects.
+  - `ra-preferences`: Persist user preferences (language, theme, filters, datagrid columns, sidebar position, etc) in local storage.
+  - `ra-navigation`: Multi-level menu and breadcrumb, with the ability to define a custom path for your resources.
+  - `ra-realtime`: Display live notifications, auto-update content on the screen, lock content when editing, with adapters for real-time backends.
+  - `ra-editable-datagrid`: Edit data directly in the list view, for better productivity. Excel-like editing experience.
+  - `ra-form-layout`: New form layouts for complex data entry tasks (accordion, wizard, etc.)
+  - `ra-relationships`: Visualize and edit complex relationships, including many-to-many relationships.
+  - `ra-tree`: Edit and visualize tree structures. Reorganize by drag and drop. Adapts to any data structure on the backend (parent_id, children, nested sets, etc).
+  - `ra-tour`: Guided tours for react-admin applications. Step-by-step instructions, Material-ui skin.
+  - `ra-markdown`: Read Markdown data, and edit it using a WYSIWYG editor in your admin
+- Get **Support** from experienced react and react-admin developers, who will help you find the right information and troubleshoot your bugs.
+- Get a **50% Discount on Professional Services** in case you need coaching, audit, or custom development by our experts.
+- Get access to exclusive **Learning Material**, including a Storybook full of examples, and a dedicated demo app.
+- Prioritize your needs in the react-admin **Development Roadmap** thanks to a priority vote.
+
+[![React-admin enterprise Edition](https://marmelab.com/ra-enterprise/assets/ra-enterprise-demo.png)](https://marmelab.com/ra-enterprise/)
+
 ## Contributing
 
 If you want to give a hand: Thank you! There are many things you can do to help making react-admin better. 
@@ -117,12 +146,12 @@ The second way to contribute is to **answer support questions on [StackOverflow]
 
 Pull requests for **bug fixes** are welcome on the [GitHub repository](https://github.com/marmelab/react-admin). There is always a bunch of [issues labeled "Good First Issue"](https://github.com/marmelab/react-admin/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22) in the bug tracker - start with these. Check the contributing guidelines in [the repository README](https://github.com/marmelab/react-admin#contributing).
 
-If you want to **add a feature**, you can open a Pull request on the `next` branch. We don't accept all features - we try to keep the react-admin code small and manageable. Try and see if your feature can't be built as an additional `npm` package. If you're in doubt, open a "Feature Request" issue to see if the core team would accept your feature before developing it.   
+If you want to **add a feature**, you can open a Pull request on the `next` branch. We don't accept all features - we try to keep the react-admin code small and manageable. Try and see if your feature can be built as an additional `npm` package. If you're in doubt, open a "Feature Request" issue to see if the core team would accept your feature before developing it. 
 
 ## License
 
-React-admin is licensed under the [MIT Licence](https://github.com/marmelab/react-admin/blob/master/LICENSE.md), sponsored and supported by [marmelab](http://marmelab.com).
+React-admin is licensed under the [MIT Licence](https://github.com/marmelab/react-admin/blob/master/LICENSE.md), sponsored and supported by [marmelab](https://marmelab.com).
 
 ## Donate
 
-This library is free to use, even for commercial purpose. If you want to give back, please talk about it, help newcomers, or contribute code. But the best way to give back is to **donate to a charity**. We recommend [Doctors Without Borders](http://www.doctorswithoutborders.org/).
+This library is free to use, even for commercial purpose. If you want to give back, please talk about it, help newcomers, or contribute code. But the best way to give back is to **donate to a charity**. We recommend [Doctors Without Borders](https://www.doctorswithoutborders.org/).

@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import TextField, { TextFieldProps } from '@material-ui/core/TextField';
 import { useInput, FieldTitle, InputProps } from 'ra-core';
 
-import sanitizeRestProps from './sanitizeRestProps';
+import sanitizeInputRestProps from './sanitizeInputRestProps';
 import InputHelperText from './InputHelperText';
 
 const leftPad = (nb = 2) => value => ('0'.repeat(nb) + value).slice(-nb);
@@ -27,6 +27,7 @@ const convertDateToString = (value: Date) => {
 
 // yyyy-MM-ddThh:mm
 const dateTimeRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
+const defaultInputLabelProps = { shrink: true };
 
 /**
  * Converts a date from the Redux store, with timezone, to a date string
@@ -56,7 +57,7 @@ const formatDateTime = (value: string | Date) => {
  * Converts a datetime string without timezone to a date object
  * with timezone, using the browser timezone.
  *
- * @param {String} value Date string, formatted as yyyy-MM-ddThh:mm
+ * @param {string} value Date string, formatted as yyyy-MM-ddThh:mm
  * @return {Date}
  */
 const parseDateTime = (value: string) => new Date(value);
@@ -64,9 +65,7 @@ const parseDateTime = (value: string) => new Date(value);
 /**
  * Input component for entering a date and a time with timezone, using the browser locale
  */
-const DateTimeInput: FunctionComponent<
-    InputProps<TextFieldProps> & Omit<TextFieldProps, 'helperText' | 'label'>
-> = ({
+const DateTimeInput: FunctionComponent<DateTimeInputProps> = ({
     format = formatDateTime,
     label,
     helperText,
@@ -86,7 +85,7 @@ const DateTimeInput: FunctionComponent<
         id,
         input,
         isRequired,
-        meta: { error, touched },
+        meta: { error, submitError, touched },
     } = useInput({
         format,
         onBlur,
@@ -106,11 +105,11 @@ const DateTimeInput: FunctionComponent<
             {...input}
             variant={variant}
             margin={margin}
-            error={!!(touched && error)}
+            error={!!(touched && (error || submitError))}
             helperText={
                 <InputHelperText
                     touched={touched}
-                    error={error}
+                    error={error || submitError}
                     helperText={helperText}
                 />
             }
@@ -122,11 +121,9 @@ const DateTimeInput: FunctionComponent<
                     isRequired={isRequired}
                 />
             }
-            InputLabelProps={{
-                shrink: true,
-            }}
+            InputLabelProps={defaultInputLabelProps}
             {...options}
-            {...sanitizeRestProps(rest)}
+            {...sanitizeInputRestProps(rest)}
         />
     );
 };
@@ -141,5 +138,8 @@ DateTimeInput.propTypes = {
 DateTimeInput.defaultProps = {
     options: {},
 };
+
+export type DateTimeInputProps = InputProps<TextFieldProps> &
+    Omit<TextFieldProps, 'helperText' | 'label'>;
 
 export default DateTimeInput;

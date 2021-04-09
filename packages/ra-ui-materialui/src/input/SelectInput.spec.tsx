@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { render, cleanup, fireEvent } from '@testing-library/react';
+import { render, fireEvent } from '@testing-library/react';
 import { Form } from 'react-final-form';
 import { TestTranslationProvider } from 'ra-core';
 
@@ -7,12 +7,13 @@ import SelectInput from './SelectInput';
 import { required } from 'ra-core';
 
 describe('<SelectInput />', () => {
-    afterEach(cleanup);
-
     const defaultProps = {
         source: 'language',
         resource: 'posts',
-        choices: [{ id: 'ang', name: 'Angular' }, { id: 'rea', name: 'React' }],
+        choices: [
+            { id: 'ang', name: 'Angular' },
+            { id: 'rea', name: 'React' },
+        ],
     };
 
     it('should use the input parameter value as the initial input value', () => {
@@ -362,7 +363,7 @@ describe('<SelectInput />', () => {
         expect(option2.getAttribute('data-value')).toEqual('rea');
     });
 
-    it('should displayed helperText if prop is present', () => {
+    it('should display helperText if prop is present', () => {
         const { getByText } = render(
             <Form
                 onSubmit={jest.fn()}
@@ -404,7 +405,8 @@ describe('<SelectInput />', () => {
                 />
             );
             const input = getByLabelText('resources.posts.fields.language *');
-            fireEvent.blur(input);
+            input.focus();
+            input.blur();
 
             const error = queryAllByText('ra.validation.required');
             expect(error.length).toEqual(0);
@@ -426,22 +428,83 @@ describe('<SelectInput />', () => {
                 />
             );
             const input = getByLabelText('resources.posts.fields.language *');
-
+            input.focus();
             const select = getByRole('button');
             fireEvent.mouseDown(select);
 
             const optionAngular = getByText('Angular');
             fireEvent.click(optionAngular);
-            fireEvent.blur(input);
-            fireEvent.blur(select);
+            input.blur();
+            select.blur();
 
+            input.focus();
             const optionEmpty = getByText('Empty');
             fireEvent.click(optionEmpty);
-            fireEvent.blur(input);
-            fireEvent.blur(select);
+            input.blur();
+            select.blur();
 
             const error = getByText('ra.validation.required');
             expect(error).not.toBeNull();
         });
+    });
+
+    it('should not render a LinearProgress if loading is true and a second has not passed yet', () => {
+        const { queryByRole } = render(
+            <Form
+                validateOnBlur
+                onSubmit={jest.fn()}
+                render={() => (
+                    <SelectInput
+                        {...{
+                            ...defaultProps,
+                            loaded: true,
+                            loading: true,
+                        }}
+                    />
+                )}
+            />
+        );
+
+        expect(queryByRole('progressbar')).toBeNull();
+    });
+
+    it('should render a LinearProgress if loading is true and a second has passed', async () => {
+        const { queryByRole } = render(
+            <Form
+                validateOnBlur
+                onSubmit={jest.fn()}
+                render={() => (
+                    <SelectInput
+                        {...{
+                            ...defaultProps,
+                            loaded: true,
+                            loading: true,
+                        }}
+                    />
+                )}
+            />
+        );
+
+        await new Promise(resolve => setTimeout(resolve, 1001));
+
+        expect(queryByRole('progressbar')).not.toBeNull();
+    });
+
+    it('should not render a LinearProgress if loading is false', () => {
+        const { queryByRole } = render(
+            <Form
+                validateOnBlur
+                onSubmit={jest.fn()}
+                render={() => (
+                    <SelectInput
+                        {...{
+                            ...defaultProps,
+                        }}
+                    />
+                )}
+            />
+        );
+
+        expect(queryByRole('progressbar')).toBeNull();
     });
 });

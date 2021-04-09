@@ -69,6 +69,17 @@ describe('Edit Page', () => {
             );
         });
 
+        it('should validate inputs inside ArrayInput', () => {
+            EditPostPage.gotoTab(3);
+
+            cy.get(EditPostPage.elements.addBacklinkButton).click();
+
+            EditPostPage.clickInput('backlinks[0].url');
+            cy.get(EditPostPage.elements.input('backlinks[0].url')).blur();
+
+            cy.contains('Required');
+        });
+
         it('should change reference list correctly when changing filter', () => {
             const EditPostTagsPage = editPageFactory('/#/posts/13');
             EditPostTagsPage.navigate();
@@ -95,13 +106,9 @@ describe('Edit Page', () => {
             EditPostTagsPage.clickInput('tags', 'reference-array-input');
 
             // Music should not be visible in the list after filter reset
-            cy.get('div[role=listbox]')
-                .contains('Music')
-                .should('not.exist');
+            cy.get('div[role=listbox]').contains('Music').should('not.exist');
 
-            cy.get('div[role=listbox]')
-                .contains('Photo')
-                .should('exist');
+            cy.get('div[role=listbox]').contains('Photo').should('exist');
         });
     });
 
@@ -259,5 +266,24 @@ describe('Edit Page', () => {
         cy.get(ListPagePosts.elements.recordRows)
             .eq(2)
             .should(el => expect(el).to.contain('Sed quo et et fugiat modi'));
+    });
+
+    it('should not display a warning about unsaved changes when an array input has been updated', () => {
+        ListPagePosts.navigate();
+        ListPagePosts.nextPage(); // Ensure the record is visible in the table
+
+        EditPostPage.navigate();
+        // Select first notification input checkbox
+        cy.get(
+            EditPostPage.elements.input('notifications', 'checkbox-group-input')
+        )
+            .eq(0)
+            .click();
+
+        EditPostPage.submit();
+
+        // If the update succeeded without display a warning about unsaved changes,
+        // we should have been redirected to the list
+        cy.url().then(url => expect(url).to.contain('/#/posts'));
     });
 });

@@ -27,6 +27,8 @@ import {
 import InputHelperText from './InputHelperText';
 import { SelectProps } from '@material-ui/core/Select';
 import { FormControlProps } from '@material-ui/core/FormControl';
+import Labeled from './Labeled';
+import { LinearProgress } from '../layout';
 
 const sanitizeRestProps = ({
     addLabel,
@@ -39,6 +41,7 @@ const sanitizeRestProps = ({
     crudGetMInputWithOptionsPropsatching,
     crudGetOInputWithOptionsPropsne,
     defaultValue,
+    disableValue,
     filter,
     filterToQuery,
     formClassName,
@@ -80,10 +83,6 @@ const useStyles = makeStyles(
         chip: {
             margin: theme.spacing(1 / 4),
         },
-        select: {
-            height: 'auto',
-            overflow: 'auto',
-        },
     }),
     { name: 'RaSelectArrayInput' }
 );
@@ -95,7 +94,7 @@ const useStyles = makeStyles(
  *
  * By default, the options are built from:
  *  - the 'id' property as the option value,
- *  - the 'name' property an the option text
+ *  - the 'name' property as the option text
  * @example
  * const choices = [
  *    { id: 'programming', name: 'Programming' },
@@ -140,16 +139,17 @@ const useStyles = makeStyles(
  *    { id: 'photography', name: 'myroot.tags.photography' },
  * ];
  */
-const SelectArrayInput: FunctionComponent<
-    ChoicesProps & InputProps<SelectProps> & FormControlProps
-> = props => {
+const SelectArrayInput: FunctionComponent<SelectArrayInputProps> = props => {
     const {
         choices = [],
         classes: classesOverride,
         className,
+        disableValue,
         format,
         helperText,
         label,
+        loaded,
+        loading,
         margin = 'dense',
         onBlur,
         onChange,
@@ -169,18 +169,22 @@ const SelectArrayInput: FunctionComponent<
     const inputLabel = useRef(null);
     const [labelWidth, setLabelWidth] = useState(0);
     useEffect(() => {
-        setLabelWidth(inputLabel.current.offsetWidth);
+        // Will be null while loading and we don't need this fix in that case
+        if (inputLabel.current) {
+            setLabelWidth(inputLabel.current.offsetWidth);
+        }
     }, []);
 
-    const { getChoiceText, getChoiceValue } = useChoices({
+    const { getChoiceText, getChoiceValue, getDisableValue } = useChoices({
         optionText,
         optionValue,
+        disableValue,
         translateChoice,
     });
     const {
         input,
         isRequired,
-        meta: { error, touched },
+        meta: { error, submitError, touched },
     } = useInput({
         format,
         onBlur,
@@ -203,25 +207,41 @@ const SelectArrayInput: FunctionComponent<
                 <MenuItem
                     key={getChoiceValue(choice)}
                     value={getChoiceValue(choice)}
+                    disabled={getDisableValue(choice)}
                 >
                     {renderMenuItemOption(choice)}
                 </MenuItem>
             ) : null;
         },
-        [getChoiceValue, renderMenuItemOption]
+        [getChoiceValue, getDisableValue, renderMenuItemOption]
     );
+
+    if (loading) {
+        return (
+            <Labeled
+                label={label}
+                source={source}
+                resource={resource}
+                className={className}
+                isRequired={isRequired}
+            >
+                <LinearProgress />
+            </Labeled>
+        );
+    }
+
     return (
         <FormControl
             margin={margin}
             className={classnames(classes.root, className)}
-            error={touched && !!error}
+            error={touched && !!(error || submitError)}
             variant={variant}
             {...sanitizeRestProps(rest)}
         >
             <InputLabel
                 ref={inputLabel}
                 id={`${label}-outlined-label`}
-                error={touched && !!error}
+                error={touched && !!(error || submitError)}
             >
                 <FieldTitle
                     label={label}
@@ -234,7 +254,7 @@ const SelectArrayInput: FunctionComponent<
                 autoWidth
                 labelId={`${label}-outlined-label`}
                 multiple
-                error={!!(touched && error)}
+                error={!!(touched && (error || submitError))}
                 renderValue={(selected: any[]) => (
                     <div className={classes.chips}>
                         {selected
@@ -260,16 +280,27 @@ const SelectArrayInput: FunctionComponent<
             >
                 {choices.map(renderMenuItem)}
             </Select>
-            <FormHelperText error={touched && !!error}>
+            <FormHelperText error={touched && !!(error || submitError)}>
                 <InputHelperText
                     touched={touched}
-                    error={error}
+                    error={error || submitError}
                     helperText={helperText}
                 />
             </FormHelperText>
         </FormControl>
     );
 };
+
+export interface SelectArrayInputProps
+    extends Omit<ChoicesProps, 'choices'>,
+        Omit<InputProps<SelectProps>, 'source'>,
+        Omit<
+            FormControlProps,
+            'defaultValue' | 'onBlur' | 'onChange' | 'onFocus'
+        > {
+    choices?: object[];
+    source?: string;
+}
 
 SelectArrayInput.propTypes = {
     choices: PropTypes.arrayOf(PropTypes.object),
@@ -284,6 +315,7 @@ SelectArrayInput.propTypes = {
         PropTypes.element,
     ]).isRequired,
     optionValue: PropTypes.string.isRequired,
+    disableValue: PropTypes.string,
     resource: PropTypes.string,
     source: PropTypes.string,
     translateChoice: PropTypes.bool,
@@ -293,6 +325,7 @@ SelectArrayInput.defaultProps = {
     options: {},
     optionText: 'name',
     optionValue: 'id',
+    disableValue: 'disabled',
     translateChoice: true,
 };
 
