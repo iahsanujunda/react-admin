@@ -1,6 +1,36 @@
 # Changelog
 
-## 3.14.2
+## v3.14.4
+
+* Fix `useGetMany` does not respect the `enabled` option ([6188](https://github.com/marmelab/react-admin/pull/6188)) ([djhi](https://github.com/djhi))
+* Fix 'Cannot set property validating of undefined' error when conditionally rendering a form component ([6186](https://github.com/marmelab/react-admin/pull/6186)) ([ThieryMichel](https://github.com/ThieryMichel))
+* Fix `useWarnWhenUsavedChanges` fails on nested fields ([6185](https://github.com/marmelab/react-admin/pull/6185)) ([djhi](https://github.com/djhi))
+* Fix warning when using `<BulkDeleteButton>` without props ([6165](https://github.com/marmelab/react-admin/pull/6165)) ([fzaninotto](https://github.com/fzaninotto))
+* Fix Menu icon isn't aligned with the sidebar icons ([6161](https://github.com/marmelab/react-admin/pull/6161)) ([JayKaku](https://github.com/JayKaku))
+* Fix missing query string after successful login ([6129](https://github.com/marmelab/react-admin/pull/6129)) ([makbol](https://github.com/makbol))
+* [Doc] Add link to Google Sheet data provider ([6187](https://github.com/marmelab/react-admin/pull/6187)) ([fzaninotto](https://github.com/fzaninotto))
+* [Doc] Fix missing documentation about the ResourceContext ([6183](https://github.com/marmelab/react-admin/pull/6183)) ([fzaninotto](https://github.com/fzaninotto))
+* [Doc] Fix broken link to source in Testing Permissions documentation ([6181](https://github.com/marmelab/react-admin/pull/6181)) ([YashJipkate](https://github.com/YashJipkate))
+* [Doc] Fix typo in `<FormDataConsumer>` usage JSDoc ([6169](https://github.com/marmelab/react-admin/pull/6169)) ([WiXSL](https://github.com/WiXSL))
+* [Doc] Fix typo in `withDataProvider` hook example ([6160](https://github.com/marmelab/react-admin/pull/6160)) ([f-jost](https://github.com/f-jost))
+* [Doc] Fix outdated link for Swedish translation ([6156](https://github.com/marmelab/react-admin/pull/6156)) ([kolben](https://github.com/kolben))
+
+## v3.14.3
+
+* Fix `<Field textAlign>` prop doesn't accept value `center` ([6152](https://github.com/marmelab/react-admin/pull/6152)) ([WiXSL](https://github.com/WiXSL))
+* Fix runtime warnings when `<SimpleList>` displays skeleton while loading ([6146](https://github.com/marmelab/react-admin/pull/6146)) ([fzaninotto](https://github.com/fzaninotto))
+* Fix `useRedirect` does not handle query strings ([6145](https://github.com/marmelab/react-admin/pull/6145)) ([fzaninotto](https://github.com/fzaninotto))
+* Fix logout notification may appear more than once ([6144](https://github.com/marmelab/react-admin/pull/6144)) ([fzaninotto](https://github.com/fzaninotto))
+* Fix submit errors cannot have translation arguments ([6140](https://github.com/marmelab/react-admin/pull/6140)) ([djhi](https://github.com/djhi))
+* Fix `<RadioButtonGroupInput>` emits runtime warnings ([6139](https://github.com/marmelab/react-admin/pull/6139)) ([djhi](https://github.com/djhi))
+* Fix `<ArrayInput>` validation ([6136](https://github.com/marmelab/react-admin/pull/6136)) ([djhi](https://github.com/djhi))
+* Fix `<Datagrid>` logs a warning about invalid prop `hasBulkActions` of type `array` ([6122](https://github.com/marmelab/react-admin/pull/6122)) ([RoBYCoNTe](https://github.com/RoBYCoNTe))
+* [TypeScript] Fix minor type errors in `ra-ui-material-ui` and `validate` ([6147](https://github.com/marmelab/react-admin/pull/6147)) ([fzaninotto](https://github.com/fzaninotto))
+* [Doc] Fix `<Labeled>` documentation is missing `resource` and `source` props usage ([6138](https://github.com/marmelab/react-admin/pull/6138)) ([djhi](https://github.com/djhi))
+* [Doc] Add illustration for the `<Aside>` component ([6132](https://github.com/marmelab/react-admin/pull/6132)) ([fzaninotto](https://github.com/fzaninotto))
+* [Doc] Add link to `ra-acl` auth package ([6123](https://github.com/marmelab/react-admin/pull/6123)) ([andrico1234](https://github.com/andrico1234))
+
+## v3.14.2
 
 * Fix `<Datagrid>` requires too many props when used standalone ([6115](https://github.com/marmelab/react-admin/pull/6115)) ([fzaninotto](https://github.com/fzaninotto))
 * Fix console warnings from `<Error>` component ([6114](https://github.com/marmelab/react-admin/pull/6114)) ([fzaninotto](https://github.com/fzaninotto))
@@ -11,7 +41,7 @@
 * [TypeScript] Fix missing import in `ra-core` hook utils ([6071](https://github.com/marmelab/react-admin/pull/6071)) ([WiXSL](https://github.com/WiXSL))
 * [Doc] Fix `<TabbedForm syncWithLocation>` example ([6097](https://github.com/marmelab/react-admin/pull/6097)) ([djhi](https://github.com/djhi))
 
-## 3.14.1
+## v3.14.1
 
 * Fix performance regression ([6096](https://github.com/marmelab/react-admin/pull/6096)) ([fzaninotto](https://github.com/fzaninotto))
 * [TypeScript] Fix `<SingleFieldList component>` doesn't accept string components ([6094](https://github.com/marmelab/react-admin/pull/6094)) ([fzaninotto](https://github.com/fzaninotto))
@@ -1209,7 +1239,7 @@ const App = () => (
 * Fix imports of routing components to `react-router-dom` ([3825](https://github.com/marmelab/react-admin/pull/3825)) ([thclark](https://github.com/thclark))
 * Fix `defaultI18nProvider` Export ([3820](https://github.com/marmelab/react-admin/pull/3820)) ([djhi](https://github.com/djhi))
 * Fix warnings Displayed when Overriding Filter Classes ([3817](https://github.com/marmelab/react-admin/pull/3817)) ([djhi](https://github.com/djhi))
-* Fix hard to read code due to non explicit dependencies ([3816](https://github.com/marmelab/react-admin/pull/3816)) ([pemoreau](https://github.com/pemoreau))
+* Fix hard to read code due to non-explicit dependencies ([3816](https://github.com/marmelab/react-admin/pull/3816)) ([pemoreau](https://github.com/pemoreau))
 * Fix `FinalForm` Props Leak to Root Component ([3815](https://github.com/marmelab/react-admin/pull/3815)) ([djhi](https://github.com/djhi))
 * Fix following sonarqube audit ([3798](https://github.com/marmelab/react-admin/pull/3798)) ([pemoreau](https://github.com/pemoreau))
 * Fix Upgrade guide order ([3789](https://github.com/marmelab/react-admin/pull/3789)) ([djhi](https://github.com/djhi))
